@@ -4,6 +4,12 @@
 응답과 비용을 비교합니다. Downstream agent, web search, production 작업은
 실행하지 않습니다.
 
+## Presentation
+
+Jev와 Decision Model을 소개하는 15분용 Reveal.js 슬라이드 10장은
+[presentation/README.md](presentation/README.md)를 참고하세요.
+슬라이드 개발·정적 빌드·speaker notes·PDF 출력 및 CLI 데모 전환 방법을 포함합니다.
+
 ## Installation
 
 Python 3.12+와 [uv](https://docs.astral.sh/uv/)가 필요합니다.
