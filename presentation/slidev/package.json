@@ -1,0 +1,23 @@
+{
+  "name": "jev-slidev-presentation",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": { "node": ">=22.12.0" },
+  "scripts": {
+    "dev": "slidev --open",
+    "build": "slidev build --router-mode hash",
+    "preview": "vite preview --host 127.0.0.1",
+    "browser:install": "playwright install chromium",
+    "export": "slidev export --output exports/jev.pdf --dark --with-clicks false",
+    "export:pptx": "slidev export --format pptx --output exports/jev.pptx --dark --with-clicks false"
+  },
+  "devDependencies": {
+    "@slidev/cli": "53.0.0",
+    "@slidev/theme-default": "0.25.0",
+    "playwright-chromium": "^1.58.2"
+  },
+  "overrides": {
+    "floating-vue": "5.2.2"
+  }
+}

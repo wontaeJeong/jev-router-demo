@@ -1,6 +1,40 @@
 # Jev Presentation
 
-15분 발표용 Reveal.js 슬라이드 10장. CLI Agent Router는 터미널에서 별도로 실행합니다.
+15분 발표용 슬라이드 10장을 Reveal.js와 Slidev로 각각 제공합니다.
+두 구현은 독립 실행하며 CLI Agent Router는 터미널에서 별도로 실행합니다.
+
+## Presentation implementations
+
+Repository root에서 각 패키지를 별도로 설치·실행합니다:
+
+### Reveal.js
+
+```bash
+cd presentation/reveal
+npm install
+npm run dev
+```
+
+기본 URL: `http://127.0.0.1:5173/`. 실행·speaker view·PDF·배포 방법은 아래에 있습니다.
+
+### Slidev
+
+```bash
+cd presentation/slidev
+npm install
+npm run dev
+```
+
+기본 URL: `http://localhost:3030/1`. [Slidev README](slidev/README.md)에 presenter mode,
+static build, PDF/PPTX export, offline 준비 및 GitHub Pages base 설정을 정리했습니다.
+
+공유 원고는 **`talk.md`**입니다. Reveal은 직접 렌더링하고 Slidev의 `slides.md`는
+같은 논리를 압축한 별도 visual adaptation입니다. 두 deck의 핵심 메시지와 실제
+demo 계약은 동일합니다. Runtime이나 rendering 구현은 서로 의존하지 않습니다.
+
+---
+
+아래는 기존 **Reveal.js** workflow입니다.
 
 ## Development
 

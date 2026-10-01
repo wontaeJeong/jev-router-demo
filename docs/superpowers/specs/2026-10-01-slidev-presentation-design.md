@@ -18,8 +18,8 @@ existing English technical terms. The closing message is “Generate when you
 need generation. Decide when you need a decision.”
 
 Use the original durations: 0:40, 1:10, 1:30, 1:30, 1:40, 1:30, 1:30, 1:00,
-3:00 and 1:30. These total 14:40; allow twenty seconds for terminal transitions
-within the approximately fifteen-minute talk. Durations appear only in notes.
+3:00 and 1:30. These total 15:00; include terminal transitions in the live demo's
+three-minute allocation. Durations appear only in notes.
 
 ## Package and authoring
 
