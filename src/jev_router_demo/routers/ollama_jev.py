@@ -61,6 +61,6 @@ class OllamaJevRouter:
             "format": "json",
         }
         return await request_route(
-            self.client, self.config.jev_base_url + "/api/generate",
+            self.client, self.config.jev_url,
             payload, "JEV", parse_jev_response, self.config.request_timeout,
         )

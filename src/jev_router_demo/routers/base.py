@@ -1,4 +1,5 @@
 import json
+from copy import deepcopy
 from collections.abc import Callable
 from time import perf_counter
 from typing import Any
@@ -6,7 +7,7 @@ from typing import Any
 import httpx
 from pydantic import ValidationError
 
-from jev_router_demo.models import RoutingResult, parse_decision
+from jev_router_demo.models import HttpExchange, RoutingResult, parse_decision
 
 
 def token_count(value: object) -> int | None:
@@ -51,16 +52,29 @@ async def request_route(
     parser: Callable[[dict[str, Any]], RoutingResult],
     timeout: float,
     headers: dict[str, str] | None = None,
+    *,
+    output_kind: str = "generated",
 ) -> RoutingResult:
     """Common transport boundary; decision contracts belong to each adapter."""
-    result = RoutingResult(router_name)
+    result = RoutingResult(router_name, output_kind=output_kind, parse_required=output_kind == "generated")
+    exchange = HttpExchange("POST", url, deepcopy(payload))
     started = perf_counter()
     try:
         response = await client.post(url, json=payload, headers=headers, timeout=timeout)
+        exchange.status_code = response.status_code
+        exchange.response_text = response.text
+        decode_error = None
+        try:
+            exchange.response_json = response.json()
+            exchange.response_is_json = True
+        except (json.JSONDecodeError, UnicodeDecodeError, RecursionError) as exc:
+            decode_error = exc
         # Retain even non-JSON errors for raw inspection.
         result.raw_response = response.text
         response.raise_for_status()
-        data = response.json()
+        if decode_error:
+            raise decode_error
+        data = exchange.response_json
         result.raw_response = data
         if not isinstance(data, dict):
             result.error = "Unexpected API response: expected a JSON object."
@@ -81,6 +95,9 @@ async def request_route(
         result.error = "Invalid JSON in API response."
     except UnicodeDecodeError:
         result.error = "Invalid Unicode encoding in API JSON response."
+    except RecursionError:
+        result.error = "API JSON response exceeds supported nesting depth. Inspect HTTP raw text."
     finally:
         result.latency_ms = (perf_counter() - started) * 1000
+        result.http = exchange
     return result

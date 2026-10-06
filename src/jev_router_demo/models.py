@@ -23,6 +23,17 @@ def parse_decision(text: str) -> RoutingDecision:
 
 
 @dataclass
+class HttpExchange:
+    method: str
+    url: str
+    request_body: dict
+    status_code: int | None = None
+    response_text: str | None = None
+    response_json: object | None = None
+    response_is_json: bool = False
+
+
+@dataclass
 class RoutingResult:
     router_name: str
     decision: RoutingDecision | None = None
@@ -40,6 +51,7 @@ class RoutingResult:
     probabilities: dict[str, dict[str, float]] | None = None
     raw_response: object | None = None
     error: str | None = None
+    http: HttpExchange | None = None
 
 
 ROUTING_POLICY = """You are the routing component of an AI agent.

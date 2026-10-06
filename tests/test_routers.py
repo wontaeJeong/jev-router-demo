@@ -169,3 +169,27 @@ def test_invalid_json_encoding_is_backend_error():
     llm, jev = run_pair(handler)
     assert llm.error
     assert jev.decision
+
+
+@pytest.mark.parametrize("status", [200, 404])
+def test_http_exchange_preserves_original_payload_and_json_error(status):
+    def handler(request):
+        if request.url.host == "jev":
+            return httpx.Response(200, json=jev_response())
+        return httpx.Response(status, json=llm_response() if status == 200 else {"error": "missing model"})
+    llm, _ = run_pair(handler, request="원본" * 1000)
+    assert llm.http.request_body["messages"][1]["content"] == "원본" * 1000
+    assert llm.http.status_code == status
+    assert llm.http.response_is_json
+    assert json.loads(llm.http.response_text) == llm.http.response_json
+    if status == 404:
+        assert llm.http.response_json == {"error": "missing model"}
+
+
+def test_timeout_keeps_request_without_response():
+    def handler(request):
+        raise httpx.ReadTimeout("timeout", request=request)
+    llm, _ = run_pair(handler)
+    assert llm.http.request_body["stream"] is False
+    assert llm.http.status_code is None
+    assert llm.http.response_text is None

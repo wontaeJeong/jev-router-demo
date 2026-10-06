@@ -1,10 +1,19 @@
 [project]
 name = "jev-router-demo"
 version = "0.1.0"
-description = "Rich CLI comparison of local agent routing backends"
+description = "Terminal and local web comparison of typed and generative routing backends"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = ["rich>=13.9", "httpx>=0.28", "python-dotenv>=1.0", "pydantic>=2.10"]
+dependencies = [
+    "rich>=13.9",
+    "httpx>=0.28",
+    "python-dotenv>=1.0",
+    "pydantic>=2.10",
+    "textual>=8.2.8",
+    "fastapi>=0.142.2",
+    "uvicorn>=0.54.0",
+    "websockets>=17.2",
+]
 
 [project.scripts]
 jev-router-demo = "jev_router_demo.main:main"
@@ -14,7 +23,10 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [dependency-groups]
-dev = ["pytest>=8.3"]
+dev = [
+    "httpx2>=2.13.1",
+    "pytest>=8.3",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

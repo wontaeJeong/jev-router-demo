@@ -1,0 +1,35 @@
+Screen { background: #0b1220; color: #d9e3f0; }
+#brand { height: 2; padding: 0 2; background: #142135; }
+#subtitle { height: 1; padding: 0 2; color: #8c9bb2; }
+.toolbar { height: 3; margin: 1 2 0 2; }
+#scenario { width: 1fr; margin-right: 1; }
+.toolbar Button { margin-left: 1; min-width: 12; }
+#request-preview-scroll { height: 6; margin: 1 2; padding: 0 1; border-left: thick #536881; }
+#request-preview-scroll:focus { border-left: thick #60b9f0; }
+#request-preview { height: auto; }
+#views { height: 1fr; margin: 0 1; }
+TabPane { padding: 1; }
+#cards { height: auto; }
+.result-card { width: 1fr; height: auto; min-height: 15; padding: 1 2; margin: 0 1 1 0; background: #142135; }
+.llm { border-top: thick #60b9f0; }
+.jev { border-top: thick #6fdaa8; }
+#cards.narrow { layout: vertical; }
+#cards.narrow .result-card { width: 100%; }
+#comparison-summary { height: auto; padding: 1; background: #1b2a3e; }
+.note { height: auto; color: #93a4bc; padding: 1; }
+#router { width: 20; }
+#http-meta { height: auto; padding: 1; color: #93a4bc; }
+#json-log { height: 1fr; background: #101a2a; border: solid #32475f; }
+#json-log:focus { border: solid #60b9f0; }
+#status { height: 2; padding: 0 2; color: #6fdaa8; }
+Footer { background: #142135; }
+RequestEditor { align: center middle; background: #000000 65%; }
+#editor-dialog { width: 85%; height: 75%; padding: 1 2; background: #142135; border: solid #60b9f0; }
+#editor-dialog Label { height: 2; }
+#request-editor { height: 1fr; }
+.compact .toolbar { margin: 0 1; }
+.compact #request-preview-scroll { height: 5; margin: 1; }
+.detail-view #request-preview-scroll { display: none; }
+.compact #http-meta { height: 1; padding: 0; }
+.compact #preview-label { height: 1; padding: 0; }
+.compact #status { height: 1; }

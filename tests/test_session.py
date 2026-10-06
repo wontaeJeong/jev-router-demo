@@ -1,0 +1,103 @@
+import asyncio
+import json
+
+import httpx
+import pytest
+
+from jev_router_demo.session import DemoSession
+from test_routers import CONFIG, jev_response, llm_response
+
+
+def test_early_result_and_exactly_once_metrics():
+    async def check():
+        release = asyncio.Event()
+        async def handler(request):
+            if request.url.host == "llm":
+                await release.wait()
+                return httpx.Response(200, json=llm_response())
+            return httpx.Response(200, json=jev_response())
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            session = DemoSession(CONFIG, client)
+            stream = session.run("x" * 2000, 0)
+            started = await anext(stream)
+            assert started["type"] == "started"
+            assert started["snapshot"]["states"] == {"LLM": "running", "JEV": "running"}
+            first = await asyncio.wait_for(anext(stream), 1)
+            assert first["router"] == "JEV"
+            assert first["snapshot"]["states"]["LLM"] == "running"
+            with pytest.raises(ValueError, match="running"):
+                await anext(session.run("duplicate"))
+            release.set()
+            rest = [event async for event in stream]
+            assert rest[-1]["type"] == "finished"
+            assert session.metrics["JEV"].requests == session.metrics["LLM"].requests == 1
+            request_data = rest[-1]["snapshot"]["results"]["LLM"]["inspector"]["request"]
+            assert "중략" in request_data["preview"]
+            assert json.loads(request_data["full"])["messages"][1]["content"] == "x" * 2000
+    asyncio.run(check())
+
+
+def test_error_isolated_and_comparison_unavailable():
+    async def check():
+        def handler(request):
+            return httpx.Response(503, json={"error": "offline"}) if request.url.host == "llm" else httpx.Response(200, json=jev_response())
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            session = DemoSession(CONFIG, client)
+            events = [event async for event in session.run("request")]
+            snapshot = events[-1]["snapshot"]
+            assert snapshot["states"] == {"LLM": "error", "JEV": "success"}
+            assert snapshot["comparison"]["latency_ratio"] is None
+            assert snapshot["metrics"]["LLM"]["errors"] == 1
+            assert snapshot["metrics"]["LLM"]["average_latency_ms"] is None
+    asyncio.run(check())
+
+
+def test_closing_run_cancels_unfinished_calls():
+    async def check():
+        cancelled = []
+        async def handler(request):
+            try:
+                await asyncio.Event().wait()
+            finally:
+                cancelled.append(request.url.host)
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            session = DemoSession(CONFIG, client)
+            stream = session.run("request")
+            await anext(stream)
+            waiting = asyncio.create_task(anext(stream))
+            await asyncio.sleep(0.02)
+            waiting.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await waiting
+            await stream.aclose()
+            assert sorted(cancelled) == ["jev", "llm"]
+            assert not session.running
+            assert session.metrics["LLM"].requests == 0
+    asyncio.run(check())
+
+
+def test_empty_request_is_rejected_before_network():
+    async def check():
+        async with httpx.AsyncClient() as client:
+            with pytest.raises(ValueError, match="empty"):
+                await anext(DemoSession(CONFIG, client).run(" \n"))
+    asyncio.run(check())
+
+
+@pytest.mark.parametrize("depth", [1100, 10000])
+def test_deep_malformed_response_does_not_cancel_healthy_backend(depth):
+    raw = "[" * depth + "0" + "]" * depth
+    async def check():
+        async def handler(request):
+            if request.url.host == "llm":
+                return httpx.Response(200, text=raw)
+            await asyncio.sleep(0.02)
+            return httpx.Response(200, json=jev_response())
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            session = DemoSession(CONFIG, client)
+            events = [event async for event in session.run("request")]
+            assert events[-1]["type"] == "finished"
+            assert session.states == {"LLM": "error", "JEV": "success"}
+            assert session.metrics["JEV"].successes == 1
+            assert events[-1]["snapshot"]["results"]["LLM"]["inspector"]["raw"]["full"] == raw
+    asyncio.run(check())

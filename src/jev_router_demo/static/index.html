@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Jev / Router Lab</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2372dfbb'/%3E%3Ctext x='7' y='24' font-size='25' font-family='sans-serif' font-weight='bold'%3Ej%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="/" aria-label="Router Lab home"><span class="logo">j/</span><span>ROUTER LAB<small>DECISIONS, NOT GENERATIONS.</small></span></a>
+    <div class="section-label">DEMO SCENARIOS <span>06</span></div>
+    <nav id="scenarios" aria-label="Scenarios"></nav>
+    <button id="custom" class="custom-button">＋ Custom request <kbd>E</kbd></button>
+    <div class="sidebar-bottom"><span class="live-dot"></span> LOCAL WORKSPACE<p>Two backends. One request.<br>Actual responses, measured live.</p></div>
+  </aside>
+  <main>
+    <header class="topbar"><span>EXPERIMENT / AGENT ROUTING</span><div><span id="connection" class="connection">Connecting…</span><button id="reconnect" hidden>Reconnect</button></div></header>
+    <section class="page-heading"><div><div class="eyebrow">THE DECISION LAYER</div><h1>Same request. <span>Different routes.</span></h1><p>Compare routing decisions and their measured cost, side by side.</p></div><span class="simulation">ROUTING-ONLY SIMULATION</span></section>
+    <section class="request-panel">
+      <div class="panel-heading"><div><span class="section-label">INPUT REQUEST</span><h2 id="scenario-title">Loading scenarios…</h2></div><div class="actions"><button id="edit">Edit request <kbd>E</kbd></button><button id="run" class="primary" disabled>▶ Run comparison <kbd>R</kbd></button></div></div>
+      <p id="request-preview" class="request-text"></p>
+      <div class="request-footer"><span id="expected"></span><span>Full request sent to both backends</span></div>
+    </section>
+    <div class="results-heading"><span class="section-label">ROUTING RESULTS</span><span id="run-state">Ready for your first comparison</span></div>
+    <section class="cards" aria-label="Router comparison">
+      <article class="router-card llm" id="card-LLM"></article>
+      <article class="router-card jev" id="card-JEV"></article>
+    </section>
+    <div class="comparison-strip"><span>OBSERVED COMPARISON</span><p id="comparison">Run both models to compare latency and output tokens.</p></div>
+    <section class="inspector-panel">
+      <div class="panel-heading"><div><span class="section-label">UNDER THE HOOD</span><h2>HTTP inspector</h2></div><div class="segmented" aria-label="Inspector router"><button class="selected" data-router="LLM" aria-pressed="true">LLM</button><button data-router="JEV" aria-pressed="false">Jev</button></div></div>
+      <div class="inspector-tabs" role="tablist" aria-label="HTTP data">
+        <button role="tab" class="selected" aria-selected="true" data-section="request">Request JSON</button><button role="tab" aria-selected="false" data-section="response">Response JSON</button><button role="tab" aria-selected="false" data-section="generated">Generated output</button><button role="tab" aria-selected="false" data-section="thinking">Thinking</button><button role="tab" aria-selected="false" data-section="raw">HTTP raw text</button>
+      </div>
+      <div class="inspector-meta"><span id="http-meta">No HTTP exchange yet</span><div class="actions"><button id="full-toggle">Show full</button><button id="copy" disabled>Copy original</button><button id="download" disabled>↓ Save original</button></div></div>
+      <div id="preview-label" class="preview-label">요약 표시 · 원본 변경 없음</div>
+      <pre id="json-view" tabindex="0" role="tabpanel" aria-label="HTTP body"><code id="json-code">Run a comparison to inspect the actual HTTP request and response.</code></pre>
+    </section>
+    <section class="metrics-panel"><div class="panel-heading"><div><span class="section-label">THIS SESSION</span><h2>Cumulative metrics</h2></div><span class="muted">Successful requests only for average latency</span></div><div class="table-scroll"><table><thead><tr><th>Measurement</th><th>LLM</th><th>Jev</th></tr></thead><tbody id="metrics"></tbody></table></div></section>
+    <footer>Routing decisions only · No downstream execution · <span id="backend-note">Waiting for API configuration.</span><br>Observed values are affected by model, cache and cold-load differences. “—” means unavailable, not zero.</footer>
+  </main>
+  <dialog id="request-dialog"><form method="dialog" id="request-form"><div class="eyebrow">MAKE IT YOUR OWN</div><h2>Edit request</h2><p>Multiline text is sent in full. The dashboard shows a shortened preview.</p><textarea id="request-editor" rows="10" aria-label="Custom request" required></textarea><div class="actions"><button type="button" id="cancel-edit">Cancel</button><button class="primary" type="submit">Use request</button></div></form></dialog>
+  <div id="toast" role="status" hidden></div>
+</body>
+</html>
