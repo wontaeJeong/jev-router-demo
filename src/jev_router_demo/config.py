@@ -14,23 +14,29 @@ class Config:
     jev_model: str
     llm_api_key: str = ""
     request_timeout: float = 60
-    # Keep implicit legacy configurations compatible; new examples select System One.
-    jev_api_mode: str = "ollama"
+    jev_api_mode: str = "systemone"
     jev_endpoint_url: str = ""
     jev_api_key: str = ""
+
+    def __post_init__(self) -> None:
+        # Ollama exposes System One; retain the old mode name as an alias.
+        if self.jev_api_mode == "ollama":
+            object.__setattr__(self, "jev_api_mode", "systemone")
 
     @property
     def jev_url(self) -> str:
         if self.jev_endpoint_url:
             return self.jev_endpoint_url
-        path = {"ollama": "/api/generate", "systemone": "/v1/systemone", "decisions": "/alpha/decisions"}[self.jev_api_mode]
+        path = {"systemone": "/v1/systemone", "decisions": "/alpha/decisions"}[self.jev_api_mode]
         return self.jev_base_url + path
 
 
 def load_config() -> Config:
     """Load .env.local from the working directory; environment takes precedence."""
     load_dotenv(".env.local", override=False)
-    mode = os.getenv("JEV_API_MODE", "ollama").strip().lower()
+    mode = os.getenv("JEV_API_MODE", "systemone").strip().lower()
+    if mode == "ollama":
+        mode = "systemone"
     if mode not in {"ollama", "systemone", "decisions"}:
         raise ValueError("JEV_API_MODE must be systemone, decisions or ollama.")
     keys = ["LLM_BASE_URL", "LLM_MODEL", "JEV_BASE_URL", "JEV_MODEL", "JEV_ENDPOINT_URL", "JEV_API_KEY"]
@@ -57,7 +63,7 @@ def load_config() -> Config:
         except ValueError as exc:
             raise ValueError(f"{key} must be a valid http:// or https:// endpoint URL: {exc}") from exc
     endpoint_host = urlsplit(values["JEV_ENDPOINT_URL"] or values["JEV_BASE_URL"]).hostname
-    if mode != "ollama" and endpoint_host == "openrouter.ai" and not values["JEV_API_KEY"]:
+    if endpoint_host == "openrouter.ai" and not values["JEV_API_KEY"]:
         raise ValueError("Missing configuration: JEV_API_KEY is required for OpenRouter System One / Decisions.")
     try:
         timeout = float(os.getenv("REQUEST_TIMEOUT", "60"))

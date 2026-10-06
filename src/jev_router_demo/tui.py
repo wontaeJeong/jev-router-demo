@@ -108,7 +108,7 @@ class RouterDemoApp(App):
 
     def compose(self) -> ComposeResult:
         yield Static(Text("JEV / ROUTER LAB   ·   Live decision comparison", style="bold cyan"), id="brand")
-        backend_note = "Ollama generated fallback" if self.config.jev_api_mode == "ollama" else self.config.jev_api_mode.upper() + " typed API"
+        backend_note = self.config.jev_api_mode.upper() + " typed API"
         yield Static("ROUTING-ONLY SIMULATION  ·  No downstream execution  ·  Jev: " + backend_note, id="subtitle")
         with Horizontal(classes="toolbar"):
             yield Select([(f"{i+1:02}  {item.label}", i) for i, item in enumerate(SCENARIOS)] + [("Custom request", -1)], value=0, allow_blank=False, id="scenario")
