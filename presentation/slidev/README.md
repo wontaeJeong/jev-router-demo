@@ -1,160 +1,137 @@
 # Jev Slidev Presentation
 
-기존 [`../talk.md`](../talk.md)를 시각적으로 압축한 **10장, 약 15분** 발표입니다.
-Reveal.js와 독립적으로 실행합니다. CLI live demo는 실제 terminal에서 진행합니다.
+**본문 15장 / 약 15분 + 보충 3장**. Markdown·Vue·CSS로 관리하는 개발자 대상 발표입니다.
+`slides.md`가 슬라이드와 발표 노트의 단일 원본입니다. CLI live demo는 별도 터미널에서 진행합니다.
 
-## Requirements
+## Requirements / install
 
-- **Node.js >=22.12.0**, npm. 설치한 `@slidev/cli@53.0.0`의 engines 기준입니다.
-- Node.js **24 LTS**로 install/build/export를 검증했습니다. 의존성
-  `postcss-nested@8`은 Node 22/24 또는 26 이상을 지원하므로 LTS를 사용하세요.
-- 한국어가 표시되는 OS system font가 필요합니다. Google Fonts나 원격 font를
-  사용하지 않습니다. Code는 OS monospace fallback을 사용합니다.
-
-## Install
+- Node.js **24 LTS**, npm 권장. Slidev의 최소 요구 버전은 22.12입니다.
+- 한국어를 지원하는 OS system font. 원격 폰트·iframe·API 호출은 사용하지 않습니다.
+- 최초 npm 설치와 export용 Chromium 다운로드는 인터넷이 필요합니다.
 
 Repository root에서:
 
 ```bash
 cd presentation/slidev
-npm install
-```
-
-Lockfile로 동일한 의존성을 설치할 때는 `npm ci`를 사용합니다. 설치·browser
-다운로드는 인터넷이 필요하지만 이후 dev/build/발표/export에는 필요하지 않습니다.
-Slidev의 Twoslash tooltip과 `floating-vue@5.4`의 호환 오류를 피하기 위해
-`floating-vue@5.2.2`를 override로 고정했습니다.
-
-## Development
-
-```bash
+npm ci
 npm run dev
 ```
 
-기본 audience URL: **http://localhost:3030/1**. 브라우저를 자동으로 엽니다.
-포트를 명시하려면 `npm run dev -- --port 3030`. 서버는 기본 loopback입니다.
-Monaco, slide 내부 실행, remote API, iframe은 사용하지 않습니다.
+Audience: **http://localhost:3030/1**. `--port 3030`으로 포트를 명시할 수 있습니다.
+Slidev Twoslash와의 호환성을 위해 `floating-vue@5.2.2` override를 유지합니다.
 
-## Build
+## Build / preview
 
 ```bash
 npm run build
 npm run preview
 ```
 
-`dist/`는 정적 web application입니다. Preview 기본 주소는
-**http://127.0.0.1:4173/#/1**. `file://` 대신 local HTTP server를 사용하세요.
-Build는 hash routing을 사용해 static hosting에서도 slide URL 새로고침이 가능합니다.
-포트가 사용 중이면 다른 포트를 선택하므로 실행 시 표시된 URL을 확인하세요.
+결과물은 `dist/`, 기본 preview는 **http://127.0.0.1:4173/#/1**입니다.
+`file://` 대신 HTTP 서버를 사용합니다. Hash routing으로 static hosting에서도
+각 slide의 URL을 새로고침할 수 있습니다. 실행 시 표시된 실제 포트를 확인하세요.
 
-### GitHub Pages / sub-path
+GitHub Pages의 repository 경로를 로컬에서 재현하려면:
 
 ```bash
-npm run build -- --base /jev-router-demo/slidev/
-npm run preview -- --base /jev-router-demo/slidev/
+npm run build -- --base /jev-router-demo/
+npm run preview -- --base /jev-router-demo/
 ```
 
-Sub-path preview: **http://127.0.0.1:4173/jev-router-demo/slidev/#/1**.
-배포 시 `dist/` 내부 전체를 해당 사이트의 `slidev/` 경로에 배치합니다.
-Base는 `/`로 시작하고 끝나야 합니다. Reveal 결과물과 별도 경로로 배포하면
-둘이 공존합니다. 이 작업은 Pages deployment workflow를 추가하지 않습니다.
-발표만 단독으로 repo 경로에 배포하려면 실제 배포 위치에 맞는 base를 전달하세요.
+Preview: **http://127.0.0.1:4173/jev-router-demo/#/1**.
+Base는 `/`로 시작하고 끝납니다. 다른 repository·custom domain에 배포하면 해당 base로 변경하세요.
+배포 workflow와 GitHub 설정은 [상위 README](../README.md#github-pages)를 참고하세요.
 
-## Presenter Mode
+## Presenter / navigation
 
-Development: **http://localhost:3030/presenter/1**.
-Production preview: **http://127.0.0.1:4173/#/presenter/1**.
-Sub-path에서도 같은 `#/presenter/1` 형식을 사용합니다.
+- Dev: **http://localhost:3030/presenter/1**.
+- Preview: **http://127.0.0.1:4173/#/presenter/1**.
+- Audience에서 **P** 또는 navigation bar의 presenter 버튼으로 진입.
+- Presenter의 **Play Mode**로 audience 창을 열고 같은 origin의 두 창을 노트북/프로젝터에 배치.
+- Current/Next slide, notes, timer 제공. Timer의 play/reset 제어로 시간 측정.
+- **→ / Space**: 다음 단계 또는 slide. **←**: 이전 단계 또는 slide.
+- Navigation bar: fullscreen, overview, presenter controls.
 
-Audience view에서 **P** 또는 navigation bar의 presenter 버튼으로 진입할 수 있습니다.
-Presenter view의 **Play Mode**는 audience view를 엽니다. 같은 origin의 두 창을
-노트북/프로젝터에 배치하세요. Current/Next slide, notes, timer, navigation이 제공됩니다.
-Timer는 시간 표시 옆 아이콘에 마우스를 올리면 나타나는 play/reset 제어로
-시작/초기화할 수 있습니다. 두 창의 slide/click 이동은 같은 origin에서 동기화됩니다.
+단계별 표시는 **4번(생성 → 판단 → 계약)**과 **8번(판단 → 생성/도구 → 실행 코드)**에
+각 3 clicks입니다. PDF/PPTX에는 최종 상태를 한 장으로 합칩니다.
 
-- **→ / Space**: 다음 click 단계 또는 slide
-- **←**: 이전 단계 또는 slide
-- Navigation bar: fullscreen, overview, presenter controls
-- Slide 02: LLM → Jev → 핵심 문구, 3 clicks
-- Slide 06: generation → decision → code + 핵심 문구, 3 clicks
+### Useful anchors
 
-## PDF Export
+| 목적 | Dev | Static / Pages |
+| --- | --- | --- |
+| Live demo | `/13` | `#/13` |
+| 결과 해석 | `/14` | `#/14` |
+| Takeaway / Q&A | `/15` | `#/15` |
+| 보충 자료 | `/16`–`/18` | `#/16`–`#/18` |
 
-최초 한 번, Chromium을 준비합니다:
+## PDF / PPTX
+
+최초 한 번 Chromium을 준비한 후:
 
 ```bash
 npm run browser:install
 npm run export
-```
-
-Slidev 자체 exporter가 `exports/jev.pdf`를 만듭니다. 16:9, dark background,
-**10페이지**이며 click 단계는 각 slide의 최종 상태로 합칩니다. Notes는 PDF에
-포함하지 않습니다. `playwright-chromium`은 local devDependency입니다.
-Offline 반입 전 이 설치를 완료하세요. Linux에서는 Playwright가 요구하는
-Chromium OS libraries도 설치되어 있어야 합니다.
-
-## PPTX Export
-
-```bash
 npm run export:pptx
 ```
 
-`exports/jev.pptx`, **10장**, presenter notes 포함. Slidev의 image-based PPTX
-export입니다. Slide는 이미지라 text/object editing과 click animation은 제공하지
-않습니다. 웹 발표가 기본 실행 방식입니다. Export 결과물은 Git에서 제외됩니다.
+- PDF: `exports/jev.pdf`, **18페이지**, 16:9, dark background, notes 제외.
+- PPTX: `exports/jev.pptx`, **18장**, presenter notes 포함. 각 slide는 이미지라
+  PowerPoint에서 텍스트·도형을 개별 편집하거나 click animation을 재생할 수 없습니다.
+- 본문만 PDF로 공유하려면 `npm run export -- --range 1-15`.
+- 생성 결과물은 Git에서 제외합니다. `slides.md`를 수정한 뒤 다시 export하세요.
+- Linux에서는 Playwright가 요구하는 Chromium OS libraries도 필요합니다.
 
-## Live Demo
+설치·빌드 이후 로컬 HTTP로 audience/presenter를 실행하면 인터넷 없이 발표할 수 있습니다.
+CLI 데모에는 별도의 로컬 모델 endpoint 준비가 필요합니다.
 
-Dev **http://localhost:3030/9**, production **http://127.0.0.1:4173/#/9**가
-terminal 전환 anchor입니다. 아래 CLI command는 **repository root**에서 실행합니다:
+## Live demo
+
+Python/uv와 `.env.local`은 [CLI README](../../README.md#configure)를 따릅니다.
+LiteLLM/Ollama 모델을 준비한 뒤 **repository root**에서 실행:
 
 ```bash
 uv run jev-router-demo
 ```
 
-Python/uv 설치와 `.env.local`은 [CLI README](../../README.md#configure)를 따릅니다.
-LiteLLM/Ollama에 실제 모델을 준비하고 발표 전에 endpoint를 확인하세요.
-
-1. Slide 09 → terminal → CLI 실행.
-2. Python Utility: `r` + Enter. 두 Router에 같은 input이 전송됩니다.
+1. Slide 13 → terminal → CLI 실행.
+2. Python Utility: `r` + Enter. 두 Router의 Tier/Web/Approval부터 읽습니다.
 3. `n` 두 번 → vLLM / CUDA Compatibility → `r` (Web).
 4. `n` 두 번 → Production DB Cleanup → `r` (Approval).
-5. Routing result, latency, input/output tokens, parse 확인. `v` 입력 전문,
-   `o` generated/raw output, Enter 복귀.
-6. `q` → browser 복귀 → **→ 한 번** → Slide 10 (`/10` 또는 `#/10`).
+5. Latency, 실제 input/output tokens, parse 비교. `v` 입력 전문, `o` generated/raw output.
+6. `q` → 브라우저 복귀 → **→ 한 번** → Slide 14에서 결과 해석 → Slide 15 Q&A.
 
-현재 **두 adapter 모두 generated JSON을 parse**합니다. Jev-like path는
-Ollama `/api/generate` fallback이며 native typed Jev API가 아닙니다. Confidence는
-미제공, `—`는 미관측입니다. Downstream agent/web/DB 작업은 실행하지 않습니다.
-연결 실패는 실제 오류로 설명하며 임의의 성공 수치로 대체하지 않습니다.
+각 명령 뒤 Enter를 누릅니다. Reference route는 metadata이지 모델 판단을 덮어쓰는 값이 아닙니다.
+현재 **두 adapter 모두 generated JSON을 parse**합니다. Jev-like 경로는 Ollama
+`/api/generate` fallback이며 native typed Jev API가 아닙니다. Candidate probability는
+미제공이고 `—`는 미관측입니다. 실제 웹 검색·DB 작업은 실행하지 않습니다.
+연결 실패 시 실제 오류를 설명하고 임의의 성공 수치로 대체하지 않습니다.
 
-## Content and timing
+## Content / timing
 
-`talk.md`가 발표 내용·논리의 source of truth이고 `slides.md`는 Slidev용 visual
-adaptation입니다. 내용 변경은 원고와 두 deck의 동일 메시지를 함께 확인하세요.
-Reveal markup/runtime을 import하지 않습니다. Slide 04는 개념적 contract이며
-공식 SDK API나 실측 probability를 주장하지 않습니다.
+본문 notes 시간:
+`0:30 / 0:50 / 1:00 / 0:50 / 0:50 / 1:00 / 0:50 / 1:00 / 0:50 / 0:50 / 0:50 / 0:40 / 3:00 / 1:00 / 1:00`.
+합계 **15:00**. Terminal 전환은 demo의 3:00에 포함하며 보충 자료는 본문 시간에서 제외합니다.
 
-Notes: 0:40 / 1:10 / 1:30 / 1:30 / 1:40 / 1:30 / 1:30 / 1:00 / 3:00 / 1:30.
-합계 15:00. Terminal 전환은 Live demo의 3:00에 포함합니다. 상세 원고 대신 짧은 설명,
-transition, demo cues만 presenter notes에 기록했습니다.
+한 slide에 한 주장, 결론형 한국어 제목, 같은 사례의 연속 사용이 편집 기준입니다.
+Concept·설명용 값·현재 구현·실측을 구분합니다. `slides.md`의 HTML comments에
+시간·전환 문장·데모 조작·세부 설명을 기록합니다.
 
-## Project Structure
+## Structure
 
 ```text
 presentation/
-├── talk.md                    # 공유 원고, Reveal에서 직접 rendering
-├── reveal/                    # 독립 Reveal.js 구현
+├── README.md
 └── slidev/
-    ├── slides.md              # 10장 + presenter notes
+    ├── slides.md              # 유일한 원고: 본문 15장 + 보충 3장 + notes
     ├── style.css              # dark/cyan visual system, system fonts
+    ├── global-bottom.vue      # footer / page numbers
     ├── components/
     │   ├── DecisionCard.vue
     │   └── MetricCard.vue
     ├── package.json
     ├── package-lock.json
     ├── dist/                  # generated, ignored
-    └── exports/               # generated PDF/PPTX, ignored
+    └── exports/               # generated, ignored
 ```
 
-Favicon도 `slides.md`에 inline SVG로 보관해 Slidev 기본 CDN 요청을 제거했습니다.
+Favicon은 `slides.md`의 inline SVG로 제공해 CDN 요청을 피합니다.

@@ -1,5 +1,9 @@
 # Slidev Jev presentation design
 
+> Historical design, superseded on 2026-10-06 by the approved Slidev-only refinement.
+> The current deck has 15 main slides plus 3 appendix slides, one content source,
+> and a Pages workflow. See `presentation/README.md` for current instructions.
+
 Approved in chat on 2026-10-01. The user subsequently requested starting from
 the latest remote commit and merging the completed PR. The isolated branch was
 fast-forwarded to `origin/main` at `c64f67a`, which includes the Reveal.js deck.

@@ -6,9 +6,9 @@
 
 ## Presentation
 
-Jev와 Decision Model을 소개하는 15분용 슬라이드 10장(Reveal.js / Slidev)은
+Jev와 Decision Model을 소개하는 Slidev 발표(본문 15장 / 15분 + 보충 3장)는
 [presentation/README.md](presentation/README.md)를 참고하세요.
-각각 독립 실행하며 개발·정적 빌드·presenter notes·PDF 출력 및 CLI 데모 전환 방법을 포함합니다.
+개발·정적 빌드·presenter notes·PDF/PPTX 출력·GitHub Pages 배포 및 CLI 데모 전환 방법을 포함합니다.
 
 ## Installation
 
