@@ -1,4 +1,5 @@
 import json
+from copy import deepcopy
 from collections.abc import Callable
 from time import perf_counter
 from typing import Any
@@ -6,7 +7,7 @@ from typing import Any
 import httpx
 from pydantic import ValidationError
 
-from jev_router_demo.models import RoutingResult, parse_decision
+from jev_router_demo.models import HttpExchange, RoutingResult, parse_decision
 
 
 def token_count(value: object) -> int | None:
@@ -54,9 +55,17 @@ async def request_route(
 ) -> RoutingResult:
     """Common transport boundary; decision contracts belong to each adapter."""
     result = RoutingResult(router_name)
+    exchange = HttpExchange("POST", url, deepcopy(payload))
     started = perf_counter()
     try:
         response = await client.post(url, json=payload, headers=headers, timeout=timeout)
+        exchange.status_code = response.status_code
+        exchange.response_text = response.text
+        try:
+            exchange.response_json = response.json()
+            exchange.response_is_json = True
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            pass
         # Retain even non-JSON errors for raw inspection.
         result.raw_response = response.text
         response.raise_for_status()
@@ -83,4 +92,5 @@ async def request_route(
         result.error = "Invalid Unicode encoding in API JSON response."
     finally:
         result.latency_ms = (perf_counter() - started) * 1000
+        result.http = exchange
     return result
