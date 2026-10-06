@@ -71,9 +71,22 @@ def test_unknown_api_mode_is_rejected(clean_env, monkeypatch):
         load_config()
 
 
-def test_openrouter_typed_endpoint_requires_its_own_key(clean_env, monkeypatch):
+@pytest.mark.parametrize("mode", ["systemone", "ollama"])
+def test_openrouter_typed_endpoint_requires_its_own_key(clean_env, monkeypatch, mode):
     for key, value in {"LLM_BASE_URL": "http://llm/v1", "LLM_MODEL": "baseline", "JEV_MODEL": "typesafe/jev-1.13",
-                       "JEV_API_MODE": "systemone", "JEV_ENDPOINT_URL": "https://openrouter.ai/api/v1/systemone"}.items():
+                       "JEV_API_MODE": mode, "JEV_ENDPOINT_URL": "https://openrouter.ai/api/v1/systemone"}.items():
         monkeypatch.setenv(key, value)
     with pytest.raises(ValueError, match="JEV_API_KEY"):
         load_config()
+
+
+@pytest.mark.parametrize("mode", [None, "ollama", "systemone"])
+def test_local_ollama_config_uses_systemone(clean_env, monkeypatch, mode):
+    for key, value in {"LLM_BASE_URL": "http://llm/v1", "LLM_MODEL": "baseline",
+                       "JEV_BASE_URL": "http://localhost:11434/", "JEV_MODEL": "tev1:4b-q4_K_M"}.items():
+        monkeypatch.setenv(key, value)
+    if mode is not None:
+        monkeypatch.setenv("JEV_API_MODE", mode)
+    config = load_config()
+    assert config.jev_api_mode == "systemone"
+    assert config.jev_url == "http://localhost:11434/v1/systemone"

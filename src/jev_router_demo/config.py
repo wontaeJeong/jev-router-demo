@@ -14,24 +14,30 @@ class Config:
     jev_model: str
     llm_api_key: str = ""
     request_timeout: float = 60
-    # Keep implicit legacy configurations compatible; new examples select System One.
-    jev_api_mode: str = "ollama"
+    jev_api_mode: str = "systemone"
     jev_endpoint_url: str = ""
     jev_api_key: str = ""
+
+    def __post_init__(self) -> None:
+        # Ollama exposes System One; retain the old mode name as an alias.
+        if self.jev_api_mode == "ollama":
+            object.__setattr__(self, "jev_api_mode", "systemone")
 
     @property
     def jev_url(self) -> str:
         if self.jev_endpoint_url:
             return self.jev_endpoint_url
-        path = {"ollama": "/api/generate", "systemone": "/v1/systemone", "decisions": "/alpha/decisions"}[self.jev_api_mode]
+        path = {"systemone": "/v1/systemone", "decisions": "/alpha/decisions"}[self.jev_api_mode]
         return self.jev_base_url + path
 
 
 def load_config() -> Config:
     """Load .env.local from the working directory; environment takes precedence."""
     load_dotenv(".env.local", override=False)
-    mode = os.getenv("JEV_API_MODE", "ollama").strip().lower()
-    if mode not in {"ollama", "systemone", "decisions"}:
+    mode = os.getenv("JEV_API_MODE", "systemone").strip().lower()
+    if mode == "ollama":
+        mode = "systemone"
+    if mode not in {"systemone", "decisions"}:
         raise ValueError("JEV_API_MODE는 systemone, decisions, ollama 중 하나여야 합니다.")
     keys = ["LLM_BASE_URL", "LLM_MODEL", "JEV_BASE_URL", "JEV_MODEL", "JEV_ENDPOINT_URL", "JEV_API_KEY"]
     values = {key: os.getenv(key, "").strip() for key in keys}
@@ -57,7 +63,7 @@ def load_config() -> Config:
         except ValueError as exc:
             raise ValueError(f"{key}에 유효한 http:// 또는 https:// 엔드포인트 URL을 지정해 주세요: {exc}") from exc
     endpoint_host = urlsplit(values["JEV_ENDPOINT_URL"] or values["JEV_BASE_URL"]).hostname
-    if mode != "ollama" and endpoint_host == "openrouter.ai" and not values["JEV_API_KEY"]:
+    if endpoint_host == "openrouter.ai" and not values["JEV_API_KEY"]:
         raise ValueError("필수 설정 누락: OpenRouter System One / Decisions에는 JEV_API_KEY가 필요합니다.")
     try:
         timeout = float(os.getenv("REQUEST_TIMEOUT", "60"))

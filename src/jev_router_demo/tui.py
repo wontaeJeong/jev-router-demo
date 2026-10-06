@@ -109,7 +109,7 @@ class RouterDemoApp(App):
 
     def compose(self) -> ComposeResult:
         yield Static(Text("JEV / 라우터 실험실   ·   실시간 결정 비교", style="bold cyan"), id="brand")
-        backend_note = "Ollama 텍스트 생성 대체 모드" if self.config.jev_api_mode == "ollama" else self.config.jev_api_mode.upper() + " 구조화 API"
+        backend_note = self.config.jev_api_mode.upper() + " 구조화 API"
         yield Static("라우팅 전용 시뮬레이션  ·  후속 작업 실행 없음  ·  Jev: " + backend_note, id="subtitle")
         with Horizontal(classes="toolbar"):
             yield Select([(f"{i+1:02}  {item.label}", i) for i, item in enumerate(SCENARIOS)] + [("직접 입력 요청", -1)], value=0, allow_blank=False, id="scenario")

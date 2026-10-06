@@ -55,7 +55,7 @@ function renderCards() {
     const details = node("dl", "details");
     for (const [label, value] of [["입력 / 전체 토큰", `${fmt(result?.input_tokens)} / ${fmt(result?.total_tokens)}`], ["생성 바이트", fmt(result?.generated_bytes)], ["결정 출력 방식", outputKinds[result?.output_kind] || result?.output_kind || "—"], ["결정 파싱", result ? result.parse_required ? result.parse_success === true ? "성공" : result.parse_success === false ? "실패" : "측정값 없음" : "불필요" : "—"], ["파싱 시간", `${fmt(result?.parse_ms, 2)} ms`]]) details.append(node("dt", "", label), node("dd", "", value));
     const mode = snapshot?.api_modes?.[name];
-    card.replaceChildren(top, node("div", "model-name", (models[name] || "연결 중…") + (mode ? " · " + (mode === "ollama" ? "Ollama 텍스트 생성 대체 모드" : mode) : "")), route, metrics, details);
+    card.replaceChildren(top, node("div", "model-name", (models[name] || "연결 중…") + (mode ? " · " + mode : "")), route, metrics, details);
     if (result?.error) card.append(node("div", "error-message", result.error));
     if (result?.probabilities) {
       const probabilities = node("div", "probabilities");
@@ -109,7 +109,7 @@ function connect() {
     const event = JSON.parse(message.data);
     if (event.type === "init") {
       models = event.models; scenarios = event.scenarios; snapshot = event.snapshot;
-      $("backend-note").textContent = snapshot.api_modes.JEV === "ollama" ? "Ollama 대체 모드에서 결정 JSON을 생성합니다." : `Jev는 ${snapshot.api_modes.JEV} 구조화 API를 사용합니다. 출력 토큰은 실제 반환값을 표시합니다.`;
+      $("backend-note").textContent = `Jev는 ${snapshot.api_modes.JEV} 구조화 API를 사용합니다. 출력 토큰은 실제 반환값을 표시합니다.`;
       $("scenarios").replaceChildren();
       scenarios.forEach((scenario, index) => { const button = node("button", "scenario-button"); const label = node("span", "", scenario.label); label.append(node("small", "", scenario.expected_tiers.map(tierLabel).join(" / ") + (scenario.expected_web ? " · 웹 검색" : "") + (scenario.expected_approval ? " · 승인" : ""))); button.append(node("span", "ordinal", String(index + 1).padStart(2,"0")), label); button.onclick = () => chooseScenario(index); $("scenarios").append(button); });
       $("connection").textContent = "● 연결됨 · 로컬 세션"; $("connection").classList.remove("offline");
