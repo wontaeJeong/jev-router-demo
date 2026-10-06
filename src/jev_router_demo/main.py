@@ -1,4 +1,6 @@
 import asyncio
+import argparse
+import sys
 
 import httpx
 from rich.console import Console
@@ -68,6 +70,13 @@ async def interactive(config: Config, console: Console) -> None:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Live router comparison: terminal TUI or local web dashboard")
+    parser.add_argument("--web", action="store_true", help="serve the local web dashboard")
+    parser.add_argument("--port", type=int, default=8000, help="local web port (default: 8000)")
+    parser.add_argument("--cli", action="store_true", help="use the original line-oriented CLI")
+    args = parser.parse_args()
+    if not 1 <= args.port <= 65535:
+        parser.error("--port must be between 1 and 65535")
     console = Console()
     try:
         config = load_config()
@@ -75,6 +84,15 @@ def main() -> None:
         console.print(Text(str(exc), style="bold red"))
         raise SystemExit(1) from None
     try:
-        asyncio.run(interactive(config, console))
+        if args.web:
+            import uvicorn
+            from jev_router_demo.web import create_app
+            console.print(f"Router dashboard: http://127.0.0.1:{args.port}")
+            uvicorn.run(create_app(config), host="127.0.0.1", port=args.port)
+        elif args.cli or not sys.stdin.isatty():
+            asyncio.run(interactive(config, console))
+        else:
+            from jev_router_demo.tui import RouterDemoApp
+            RouterDemoApp(config).run()
     except (EOFError, KeyboardInterrupt):
         console.print("\nGoodbye.")
