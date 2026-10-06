@@ -1,5 +1,9 @@
 # Jev presentation design
 
+> Historical design, superseded on 2026-10-06 by the approved Slidev-only refinement.
+> Reveal.js and the shared talk source were removed. Current content and workflows:
+> `presentation/slidev/slides.md` and `presentation/README.md`.
+
 Approved in chat on 2026-10-01 after repository investigation.
 
 ## Content and scope

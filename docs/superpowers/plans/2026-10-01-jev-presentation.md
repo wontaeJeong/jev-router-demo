@@ -1,5 +1,8 @@
 # Jev Presentation Implementation Plan
 
+> Historical plan, superseded on 2026-10-06 by the approved Slidev-only refinement.
+> Do not execute this plan against the current repository; see `presentation/README.md`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Inline execution was selected for this session.
 
 **Goal:** Build a ten-slide offline-first Reveal.js deck supporting a 15-minute talk and the existing CLI live demo.
