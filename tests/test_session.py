@@ -25,7 +25,7 @@ def test_early_result_and_exactly_once_metrics():
             first = await asyncio.wait_for(anext(stream), 1)
             assert first["router"] == "JEV"
             assert first["snapshot"]["states"]["LLM"] == "running"
-            with pytest.raises(ValueError, match="running"):
+            with pytest.raises(ValueError, match="실행 중"):
                 await anext(session.run("duplicate"))
             release.set()
             rest = [event async for event in stream]
@@ -79,7 +79,7 @@ def test_closing_run_cancels_unfinished_calls():
 def test_empty_request_is_rejected_before_network():
     async def check():
         async with httpx.AsyncClient() as client:
-            with pytest.raises(ValueError, match="empty"):
+            with pytest.raises(ValueError, match="요청 내용을 입력"):
                 await anext(DemoSession(CONFIG, client).run(" \n"))
     asyncio.run(check())
 

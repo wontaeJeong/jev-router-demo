@@ -56,7 +56,7 @@ def parse_systemone_response(response: dict) -> RoutingResult:
             result.total_tokens = result.input_tokens + result.output_tokens
     answers = response.get("answers")
     if not isinstance(answers, dict):
-        result.error = "Unexpected System One response: missing typed answers."
+        result.error = "예상과 다른 System One 응답: 구조화된 답변이 없습니다."
         return result
     choices, probabilities = {}, {}
     for key, question in QUESTIONS.items():
@@ -64,7 +64,7 @@ def parse_systemone_response(response: dict) -> RoutingResult:
         allowed = question["criteria"]
         if (not isinstance(answer, dict) or answer.get("type") != "choice"
                 or not isinstance(answer.get("choice"), str) or answer["choice"] not in allowed):
-            result.error = f"Unexpected System One response: invalid Choice answer for {key}."
+            result.error = f"예상과 다른 System One 응답: {key}의 선택 답변이 잘못되었습니다."
             return result
         choices[key] = answer["choice"]
         candidates = answer.get("probabilities")
@@ -73,7 +73,7 @@ def parse_systemone_response(response: dict) -> RoutingResult:
                 label not in allowed or type(value) not in {int, float} or not 0 <= value <= 1 or not math.isfinite(value)
                 for label, value in candidates.items()
             ):
-                result.error = f"Unexpected System One response: invalid probabilities for {key}."
+                result.error = f"예상과 다른 System One 응답: {key}의 후보 확률이 잘못되었습니다."
                 return result
             if candidates:
                 probabilities[key] = dict(candidates)

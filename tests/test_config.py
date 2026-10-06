@@ -15,7 +15,7 @@ def clean_env(monkeypatch, tmp_path):
 
 
 def test_missing_config_is_readable(clean_env):
-    with pytest.raises(ValueError, match="Missing configuration:.*LLM_BASE_URL"):
+    with pytest.raises(ValueError, match="필수 설정 누락:.*LLM_BASE_URL"):
         load_config()
 
 

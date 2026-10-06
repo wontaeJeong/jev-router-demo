@@ -30,19 +30,19 @@ async def interactive(config: Config, console: Console) -> None:
     scenario = SCENARIOS[index]
     results = None
     metrics = {"LLM": RouterMetrics(), "JEV": RouterMetrics()}
-    message = "Commands use Enter. Both routers use actual endpoint responses."
+    message = "명령 입력 후 Enter를 누르세요. 두 라우터의 실제 API 응답을 사용합니다."
     async with httpx.AsyncClient() as client:
         llm = LiteLLMRouter(client, config)
         jev = create_jev_router(client, config)
         while True:
             render_screen(console, scenario, index, results, metrics, message)
-            command = console.input("\nCommand > ").strip().lower()
+            command = console.input("\n명령 > ").strip().lower()
             message = ""
             if command == "q":
                 return
             if command == "r":
-                console.print(Text("Routing request… LLM + Jev-like (concurrent)", style="cyan"))
-                with console.status("Waiting for router responses…", spinner="dots"):
+                console.print(Text("요청 라우팅 중… LLM + Jev (동시 실행)", style="cyan"))
+                with console.status("라우터 응답을 기다리는 중…", spinner="dots"):
                     results = await compare(scenario.request, llm, jev)
                 for result in results:
                     metrics[result.router_name].add(result)
@@ -51,34 +51,34 @@ async def interactive(config: Config, console: Console) -> None:
                 scenario = SCENARIOS[index]
                 results = None
             elif command == "e":
-                request = console.input("Request > ")
+                request = console.input("요청 > ")
                 if request.strip():
-                    scenario = Scenario("Custom", request)
+                    scenario = Scenario("직접 입력", request)
                     results = None
-                    message = "Custom request ready. Press r then Enter to run."
+                    message = "직접 입력 요청이 준비되었습니다. r 입력 후 Enter를 눌러 실행하세요."
                 else:
-                    message = "Empty request ignored."
+                    message = "빈 요청은 적용하지 않았습니다."
             elif command == "v":
-                console.print(Panel(Text(scenario.request), title="Full request"))
-                console.input("Enter to return > ")
+                console.print(Panel(Text(scenario.request), title="요청 원문 전체"))
+                console.input("Enter를 눌러 돌아가기 > ")
             elif command == "o":
                 if results:
                     show_raw_outputs(console, results)
                 else:
-                    console.print("Run a request first to inspect its outputs.")
-                console.input("Enter to return > ")
+                    console.print("출력을 확인하려면 먼저 요청을 실행해 주세요.")
+                console.input("Enter를 눌러 돌아가기 > ")
             else:
-                message = "Choose r, n, p, e, v, o or q."
+                message = "r, n, p, e, v, o, q 중에서 선택해 주세요."
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Live router comparison: terminal TUI or local web dashboard")
-    parser.add_argument("--web", action="store_true", help="serve the local web dashboard")
-    parser.add_argument("--port", type=int, default=8000, help="local web port (default: 8000)")
-    parser.add_argument("--cli", action="store_true", help="use the original line-oriented CLI")
+    parser = argparse.ArgumentParser(description="실시간 라우터 비교: 터미널 UI 또는 로컬 웹 대시보드")
+    parser.add_argument("--web", action="store_true", help="로컬 웹 대시보드 실행")
+    parser.add_argument("--port", type=int, default=8000, help="로컬 웹 포트 (기본값: 8000)")
+    parser.add_argument("--cli", action="store_true", help="줄 단위 명령을 입력하는 기존 CLI 사용")
     args = parser.parse_args()
     if not 1 <= args.port <= 65535:
-        parser.error("--port must be between 1 and 65535")
+        parser.error("--port는 1부터 65535 사이여야 합니다")
     console = Console()
     try:
         config = load_config()
@@ -89,7 +89,7 @@ def main() -> None:
         if args.web:
             import uvicorn
             from jev_router_demo.web import create_app
-            console.print(f"Router dashboard: http://127.0.0.1:{args.port}")
+            console.print(f"라우터 대시보드: http://127.0.0.1:{args.port}")
             uvicorn.run(create_app(config), host="127.0.0.1", port=args.port)
         elif args.cli or not sys.stdin.isatty():
             asyncio.run(interactive(config, console))
@@ -97,4 +97,4 @@ def main() -> None:
             from jev_router_demo.tui import RouterDemoApp
             RouterDemoApp(config).run()
     except (EOFError, KeyboardInterrupt):
-        console.print("\nGoodbye.")
+        console.print("\n종료합니다.")

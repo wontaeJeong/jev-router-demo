@@ -18,14 +18,14 @@ def token_count(value: object) -> int | None:
 def parse_generated(result: RoutingResult) -> RoutingResult:
     """Parse decision text while keeping usage/raw output on validation failure."""
     if result.generated_text is None:
-        result.error = "Unexpected API response: missing generated decision text."
+        result.error = "예상과 다른 API 응답: 생성된 결정 텍스트가 없습니다."
         return result
     try:
         result.generated_bytes = len(
             (result.generated_text + (result.thinking_text or "")).encode("utf-8")
         )
     except UnicodeEncodeError:
-        result.error = "Unexpected API response: invalid Unicode in generated content."
+        result.error = "예상과 다른 API 응답: 생성 내용에 잘못된 Unicode가 포함되어 있습니다."
         return result
     started = perf_counter()
     try:
@@ -35,10 +35,10 @@ def parse_generated(result: RoutingResult) -> RoutingResult:
         result.parse_success = False
         first = exc.errors(include_url=False)[0]
         if first["type"] == "json_invalid":
-            result.error = "Invalid JSON in generated routing output."
+            result.error = "생성된 라우팅 출력의 JSON 형식이 잘못되었습니다."
         else:
             field = ".".join(str(part) for part in first["loc"]) or "decision"
-            result.error = f"Malformed routing result: {field}: {first['msg']}"
+            result.error = f"라우팅 결과 형식 오류: {field}: {first['msg']}"
     finally:
         result.parse_ms = (perf_counter() - started) * 1000
     return result
@@ -77,26 +77,26 @@ async def request_route(
         data = exchange.response_json
         result.raw_response = data
         if not isinstance(data, dict):
-            result.error = "Unexpected API response: expected a JSON object."
+            result.error = "예상과 다른 API 응답: JSON 객체가 필요합니다."
         else:
             result = parser(data)
     except httpx.TimeoutException:
-        result.error = f"Request timed out after {timeout:g} seconds."
+        result.error = f"{timeout:g}초 후 요청 시간이 초과되었습니다."
     except httpx.ConnectError:
-        result.error = "Cannot connect (connection refused or unavailable endpoint). Check URL and service."
+        result.error = "연결할 수 없습니다 (연결 거부 또는 엔드포인트 사용 불가). URL과 서비스를 확인해 주세요."
     except httpx.HTTPStatusError as exc:
         detail = exc.response.text[:250]
-        result.error = f"HTTP {exc.response.status_code}: {detail} (check model name/configuration)."
+        result.error = f"HTTP {exc.response.status_code}: {detail} (모델 이름과 설정을 확인해 주세요)."
     except httpx.RequestError as exc:
-        result.error = f"Network error: {exc}"
+        result.error = f"네트워크 오류: {exc}"
     except httpx.InvalidURL as exc:
-        result.error = f"Invalid endpoint URL: {exc}"
+        result.error = f"잘못된 엔드포인트 URL: {exc}"
     except json.JSONDecodeError:
-        result.error = "Invalid JSON in API response."
+        result.error = "API 응답의 JSON 형식이 잘못되었습니다."
     except UnicodeDecodeError:
-        result.error = "Invalid Unicode encoding in API JSON response."
+        result.error = "API JSON 응답의 Unicode 인코딩이 잘못되었습니다."
     except RecursionError:
-        result.error = "API JSON response exceeds supported nesting depth. Inspect HTTP raw text."
+        result.error = "API JSON 응답이 지원하는 중첩 깊이를 초과했습니다. HTTP 원문을 확인해 주세요."
     finally:
         result.latency_ms = (perf_counter() - started) * 1000
         result.http = exchange

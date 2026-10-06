@@ -32,13 +32,13 @@ def parse_jev_response(response: dict[str, Any]) -> RoutingResult:
     if result.input_tokens is not None and result.output_tokens is not None:
         result.total_tokens = result.input_tokens + result.output_tokens
     if "error" in response:
-        result.error = f"Ollama error: {str(response['error'])[:250]}"
+        result.error = f"Ollama 오류: {str(response['error'])[:250]}"
         return result
     if response.get("done") is not True:
-        result.error = "Unexpected API response: Ollama generation is not complete."
+        result.error = "예상과 다른 API 응답: Ollama 생성이 완료되지 않았습니다."
         return result
     if not isinstance(response.get("response"), str):
-        result.error = "Unexpected API response: missing Ollama response text."
+        result.error = "예상과 다른 API 응답: Ollama 응답 텍스트가 없습니다."
         return result
     result.generated_text = response["response"]
     thinking = response.get("thinking")

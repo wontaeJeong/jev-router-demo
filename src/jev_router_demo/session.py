@@ -62,9 +62,9 @@ class DemoSession:
 
     async def run(self, request: str, scenario_id: int | None = None):
         if self.running:
-            raise ValueError("A comparison is already running.")
+            raise ValueError("이미 비교가 실행 중입니다.")
         if not request.strip():
-            raise ValueError("Request must not be empty.")
+            raise ValueError("요청 내용을 입력해 주세요.")
         self.running = True
         self.run_id += 1
         self.request, self.scenario_id = request, scenario_id

@@ -21,31 +21,31 @@ def test_result_screen_shows_actual_and_unavailable_metrics(width):
         metrics[result.router_name].add(result)
     render_screen(console, SCENARIOS[4], 4, (llm, jev), metrics)
     output = stream.getvalue()
-    assert "STANDARD" in output
+    assert "일반 처리" in output
     # Columns can interleave wrapped lines; assert route semantics separately.
-    assert "HUMAN APPROVAL REQUIRED" in route_line(llm)
-    assert "HUMAN APPROVAL" in output
-    assert "REQUIRED" in output
-    assert "WEB ENABLED" in output
+    assert "사용자 승인 필요" in route_line(llm)
+    assert "사용자 승인" in output
+    assert "필요" in output
+    assert "웹 검색 사용" in output
     assert "connection refused [not markup]" in output
-    assert "Cumulative Metrics" in output
+    assert "누적 측정값" in output
     assert "-" in output
     assert "0" in output
-    assert "SIMULATION" in output
+    assert "시뮬레이션" in output
 
 
 def test_route_is_simulation_with_no_approval():
     result = RoutingResult("JEV", decision=RoutingDecision(model_tier="fast", needs_web=False, needs_approval=False))
-    assert "FAST MODEL" in route_line(result)
-    assert "WEB DISABLED" in route_line(result)
-    assert "EXECUTE (SIMULATED)" in route_line(result)
+    assert "빠른 처리 모델" in route_line(result)
+    assert "웹 검색 미사용" in route_line(result)
+    assert "실행 (시뮬레이션)" in route_line(result)
 
 
 def test_all_scenarios_and_request_preview():
     assert len(SCENARIOS) == 6
     stream = StringIO()
     render_screen(Console(file=stream, width=60, color_system=None), SCENARIOS[5], 5, None, {"LLM": RouterMetrics(), "JEV": RouterMetrics()})
-    assert "Scenario 6/6" in stream.getvalue()
+    assert "시나리오 6/6" in stream.getvalue()
     assert "…" in stream.getvalue()
     assert "[v]" in stream.getvalue()
 
@@ -64,7 +64,7 @@ def test_wide_results_share_a_row_even_with_long_routes():
     result = RoutingResult("LLM", decision=RoutingDecision(model_tier="reasoning", needs_web=True, needs_approval=True))
     other = RoutingResult("JEV", decision=result.decision)
     render_screen(Console(file=stream, width=120, color_system=None), SCENARIOS[5], 5, (result, other), {"LLM": RouterMetrics(), "JEV": RouterMetrics()})
-    assert any("LLM Router" in line and "JEV Router" in line for line in stream.getvalue().splitlines())
+    assert any("LLM 라우터" in line and "JEV 라우터" in line for line in stream.getvalue().splitlines())
 
 
 def test_raw_inspection_handles_invalid_generated_unicode():

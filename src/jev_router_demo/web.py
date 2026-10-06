@@ -26,14 +26,14 @@ class RunCommand(BaseModel):
     @classmethod
     def nonempty(cls, value):
         if not value.strip():
-            raise ValueError("Request must not be empty")
+            raise ValueError("요청 내용을 입력해 주세요")
         return value
 
     @field_validator("scenario_id")
     @classmethod
     def valid_scenario(cls, value):
         if value is not None and not 0 <= value < len(SCENARIOS):
-            raise ValueError("Unknown scenario")
+            raise ValueError("알 수 없는 시나리오입니다")
         return value
 
 
@@ -80,10 +80,10 @@ def create_app(config: Config, client: httpx.AsyncClient | None = None) -> FastA
                 try:
                     command = RunCommand.model_validate_json(text)
                 except ValidationError:
-                    await send({"type": "error", "message": "Invalid command. Provide a nonempty request and a valid scenario."})
+                    await send({"type": "error", "message": "잘못된 명령입니다. 요청 내용과 유효한 시나리오를 지정해 주세요."})
                     continue
                 if run_task and not run_task.done():
-                    await send({"type": "error", "message": "A comparison is already running."})
+                    await send({"type": "error", "message": "이미 비교가 실행 중입니다."})
                     continue
                 run_task = asyncio.create_task(run(command))
         except WebSocketDisconnect:

@@ -1,48 +1,50 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Jev / Router Lab</title>
+  <title>Jev / 라우터 실험실</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2372dfbb'/%3E%3Ctext x='7' y='24' font-size='25' font-family='sans-serif' font-weight='bold'%3Ej%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="/static/style.css">
   <script src="/static/app.js" defer></script>
 </head>
 <body>
   <aside class="sidebar">
-    <a class="brand" href="/" aria-label="Router Lab home"><span class="logo">j/</span><span>ROUTER LAB<small>DECISIONS, NOT GENERATIONS.</small></span></a>
-    <div class="section-label">DEMO SCENARIOS <span>06</span></div>
-    <nav id="scenarios" aria-label="Scenarios"></nav>
-    <button id="custom" class="custom-button">＋ Custom request <kbd>E</kbd></button>
-    <div class="sidebar-bottom"><span class="live-dot"></span> LOCAL WORKSPACE<p>Two backends. One request.<br>Actual responses, measured live.</p></div>
+    <a class="brand" href="/" aria-label="라우터 실험실 홈"><span class="logo">j/</span><span>라우터 실험실<small>텍스트 생성 대신 결정.</small></span></a>
+    <div class="section-label">테스트 시나리오 <span>06</span></div>
+    <nav id="scenarios" aria-label="시나리오"></nav>
+    <button id="custom" class="custom-button">＋ 직접 입력 <kbd>E</kbd></button>
+    <div class="sidebar-bottom"><span class="live-dot"></span> 로컬 작업 공간<p>하나의 요청, 두 백엔드.<br>실제 응답을 실시간으로 측정합니다.</p></div>
   </aside>
   <main>
-    <header class="topbar"><span>EXPERIMENT / AGENT ROUTING</span><div><span id="connection" class="connection">Connecting…</span><button id="reconnect" hidden>Reconnect</button></div></header>
-    <section class="page-heading"><div><div class="eyebrow">THE DECISION LAYER</div><h1>Same request. <span>Different routes.</span></h1><p>Compare routing decisions and their measured cost, side by side.</p></div><span class="simulation">ROUTING-ONLY SIMULATION</span></section>
+    <header class="topbar"><span>실험 / 에이전트 라우팅</span><div><span id="connection" class="connection">연결 중…</span><button id="reconnect" hidden>다시 연결</button></div></header>
+    <section class="page-heading"><div><div class="eyebrow">요청을 판단하는 계층</div><h1>같은 요청. <span>다른 경로.</span></h1><p>라우팅 결정과 실제 측정 비용을 나란히 비교합니다.</p></div><span class="simulation">라우팅 전용 시뮬레이션</span></section>
     <section class="request-panel">
-      <div class="panel-heading"><div><span class="section-label">INPUT REQUEST</span><h2 id="scenario-title">Loading scenarios…</h2></div><div class="actions"><button id="edit">Edit request <kbd>E</kbd></button><button id="run" class="primary" disabled>▶ Run comparison <kbd>R</kbd></button></div></div>
+      <div class="panel-heading"><div><span class="section-label">입력 요청</span><h2 id="scenario-title">시나리오 불러오는 중…</h2></div><div class="actions"><button id="edit">요청 수정 <kbd>E</kbd></button><button id="run" class="primary" disabled>▶ 비교 실행 <kbd>R</kbd></button></div></div>
+      <div id="request-summary" class="request-summary" hidden><span class="section-label">요청 요약</span><p id="summary-text"></p></div>
+      <div class="section-label">실제 전송 요청</div>
       <p id="request-preview" class="request-text"></p>
-      <div class="request-footer"><span id="expected"></span><span>Full request sent to both backends</span></div>
+      <div class="request-footer"><span id="expected"></span><span>두 백엔드에 요청 원문 전체를 전송합니다</span></div>
     </section>
-    <div class="results-heading"><span class="section-label">ROUTING RESULTS</span><span id="run-state">Ready for your first comparison</span></div>
-    <section class="cards" aria-label="Router comparison">
+    <div class="results-heading"><span class="section-label">라우팅 결과</span><span id="run-state">첫 비교를 실행할 준비가 되었습니다</span></div>
+    <section class="cards" aria-label="라우터 비교">
       <article class="router-card llm" id="card-LLM"></article>
       <article class="router-card jev" id="card-JEV"></article>
     </section>
-    <div class="comparison-strip"><span>OBSERVED COMPARISON</span><p id="comparison">Run both models to compare latency and output tokens.</p></div>
+    <div class="comparison-strip"><span>측정값 비교</span><p id="comparison">두 모델을 실행해 응답 시간과 출력 토큰을 비교하세요.</p></div>
     <section class="inspector-panel">
-      <div class="panel-heading"><div><span class="section-label">UNDER THE HOOD</span><h2>HTTP inspector</h2></div><div class="segmented" aria-label="Inspector router"><button class="selected" data-router="LLM" aria-pressed="true">LLM</button><button data-router="JEV" aria-pressed="false">Jev</button></div></div>
-      <div class="inspector-tabs" role="tablist" aria-label="HTTP data">
-        <button role="tab" class="selected" aria-selected="true" data-section="request">Request JSON</button><button role="tab" aria-selected="false" data-section="response">Response JSON</button><button role="tab" aria-selected="false" data-section="generated">Generated output</button><button role="tab" aria-selected="false" data-section="thinking">Thinking</button><button role="tab" aria-selected="false" data-section="raw">HTTP raw text</button>
+      <div class="panel-heading"><div><span class="section-label">내부 동작 살펴보기</span><h2>HTTP 상세 보기</h2></div><div class="segmented" aria-label="상세 보기 라우터"><button class="selected" data-router="LLM" aria-pressed="true">LLM</button><button data-router="JEV" aria-pressed="false">Jev</button></div></div>
+      <div class="inspector-tabs" role="tablist" aria-label="HTTP 데이터">
+        <button role="tab" class="selected" aria-selected="true" data-section="request">요청 JSON</button><button role="tab" aria-selected="false" data-section="response">응답 JSON</button><button role="tab" aria-selected="false" data-section="generated">생성 출력</button><button role="tab" aria-selected="false" data-section="thinking">추론 내용</button><button role="tab" aria-selected="false" data-section="raw">HTTP 원문</button>
       </div>
-      <div class="inspector-meta"><span id="http-meta">No HTTP exchange yet</span><div class="actions"><button id="full-toggle">Show full</button><button id="copy" disabled>Copy original</button><button id="download" disabled>↓ Save original</button></div></div>
-      <div id="preview-label" class="preview-label">요약 표시 · 원본 변경 없음</div>
-      <pre id="json-view" tabindex="0" role="tabpanel" aria-label="HTTP body"><code id="json-code">Run a comparison to inspect the actual HTTP request and response.</code></pre>
+      <div class="inspector-meta"><span id="http-meta">아직 HTTP 통신 기록이 없습니다</span><div class="actions"><button id="full-toggle">전체 보기</button><button id="copy" disabled>원문 복사</button><button id="download" disabled>↓ 원문 저장</button></div></div>
+      <div id="preview-label" class="preview-label">축약 표시 · 원본 변경 없음</div>
+      <pre id="json-view" tabindex="0" role="tabpanel" aria-label="HTTP 본문"><code id="json-code">비교를 실행하면 실제 HTTP 요청과 응답을 확인할 수 있습니다.</code></pre>
     </section>
-    <section class="metrics-panel"><div class="panel-heading"><div><span class="section-label">THIS SESSION</span><h2>Cumulative metrics</h2></div><span class="muted">Successful requests only for average latency</span></div><div class="table-scroll"><table><thead><tr><th>Measurement</th><th>LLM</th><th>Jev</th></tr></thead><tbody id="metrics"></tbody></table></div></section>
-    <footer>Routing decisions only · No downstream execution · <span id="backend-note">Waiting for API configuration.</span><br>Observed values are affected by model, cache and cold-load differences. “—” means unavailable, not zero.</footer>
+    <section class="metrics-panel"><div class="panel-heading"><div><span class="section-label">현재 세션</span><h2>누적 측정값</h2></div><span class="muted">평균 응답 시간은 성공한 요청만 집계합니다</span></div><div class="table-scroll"><table><thead><tr><th>측정 항목</th><th>LLM</th><th>Jev</th></tr></thead><tbody id="metrics"></tbody></table></div></section>
+    <footer>라우팅 결정만 수행 · 후속 작업 실행 없음 · <span id="backend-note">API 설정을 기다리는 중입니다.</span><br>측정값은 모델·캐시·초기 로딩 차이의 영향을 받습니다. ‘—’는 0이 아니라 측정값 없음을 뜻합니다.</footer>
   </main>
-  <dialog id="request-dialog"><form method="dialog" id="request-form"><div class="eyebrow">MAKE IT YOUR OWN</div><h2>Edit request</h2><p>Multiline text is sent in full. The dashboard shows a shortened preview.</p><textarea id="request-editor" rows="10" aria-label="Custom request" required></textarea><div class="actions"><button type="button" id="cancel-edit">Cancel</button><button class="primary" type="submit">Use request</button></div></form></dialog>
+  <dialog id="request-dialog"><form method="dialog" id="request-form"><div class="eyebrow">직접 입력하기</div><h2>요청 수정</h2><p>여러 줄의 텍스트도 전체를 전송합니다. 화면에는 축약된 미리보기가 표시됩니다.</p><textarea id="request-editor" rows="10" aria-label="직접 입력 요청" required></textarea><div class="actions"><button type="button" id="cancel-edit">취소</button><button class="primary" type="submit">요청 적용</button></div></form></dialog>
   <div id="toast" role="status" hidden></div>
 </body>
 </html>

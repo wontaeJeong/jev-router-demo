@@ -10,7 +10,7 @@ def test_cli_missing_config_and_interactive_navigation(tmp_path):
     command = [sys.executable, "-m", "jev_router_demo"]
     missing = subprocess.run(command, cwd=tmp_path, env=env, text=True, capture_output=True, timeout=10)
     assert missing.returncode == 1
-    assert "Missing configuration" in missing.stdout
+    assert "필수 설정 누락" in missing.stdout
     assert "Traceback" not in missing.stdout + missing.stderr
     # Only configuration is provided; navigation must not trigger health calls.
     (tmp_path / ".env.local").write_text(
@@ -22,10 +22,10 @@ def test_cli_missing_config_and_interactive_navigation(tmp_path):
         text=True, capture_output=True, timeout=10,
     )
     assert session.returncode == 0
-    assert "FastAPI Concurrency" in session.stdout
-    assert "Python Utility" in session.stdout
+    assert "FastAPI 동시성 오류" in session.stdout
+    assert "Python 간단한 활용" in session.stdout
     assert "Custom inspect request" in session.stdout
-    assert "Run a request first" in session.stdout
+    assert "먼저 요청을 실행" in session.stdout
     assert "Traceback" not in session.stdout + session.stderr
 
 
@@ -41,7 +41,7 @@ def test_cli_run_errors_remain_interactive(tmp_path):
         input="r\no\n\nn\nq\n", text=True, capture_output=True, timeout=10,
     )
     assert result.returncode == 0
-    assert "Cannot connect" in result.stdout
-    assert "FastAPI Concurrency" in result.stdout
-    assert "Errors" in result.stdout
+    assert "연결할 수 없습니다" in result.stdout
+    assert "FastAPI 동시성 오류" in result.stdout
+    assert "오류 수" in result.stdout
     assert "Traceback" not in result.stdout + result.stderr

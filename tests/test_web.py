@@ -7,6 +7,24 @@ from jev_router_demo.web import create_app
 from test_routers import CONFIG, jev_response, llm_response
 
 
+def test_scenario_summary_is_metadata_not_backend_input():
+    requests = []
+    def handler(request):
+        requests.append(request.content.decode())
+        return httpx.Response(200, json=llm_response() if request.url.host == "llm" else jev_response())
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    with TestClient(create_app(CONFIG, client)) as browser, browser.websocket_connect("/ws") as socket:
+        scenarios = socket.receive_json()["scenarios"]
+        assert all(item.get("summary") for item in scenarios)
+        scenario = scenarios[0]
+        socket.send_json({"type": "run", "request": scenario["request"], "scenario_id": 0})
+        while socket.receive_json()["type"] != "finished":
+            pass
+        assert len(requests) == 2
+        assert all(scenario["request"] in body for body in requests)
+        assert all(scenario["summary"] not in body for body in requests)
+
+
 def test_web_assets_run_and_isolated_sessions():
     async def handler(request):
         if request.url.host == "llm":
