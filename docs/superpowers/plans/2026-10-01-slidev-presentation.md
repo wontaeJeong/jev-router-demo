@@ -1,5 +1,8 @@
 # Slidev Jev Presentation Implementation Plan
 
+> Historical plan, superseded on 2026-10-06 by the approved Slidev-only refinement.
+> Do not execute this plan against the current repository; see `presentation/README.md`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Inline execution follows the user's instruction to start and complete the work in this session. Steps use checkbox syntax for tracking.
 
 **Goal:** Add an independent ten-slide Slidev adaptation of the existing Jev talk, verify it, and merge its PR.
