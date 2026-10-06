@@ -90,7 +90,7 @@ Python/uv와 `.env.local`은 [CLI README](../../README.md#configure)를 따릅�
 LiteLLM/Ollama 모델을 준비한 뒤 **repository root**에서 실행:
 
 ```bash
-uv run jev-router-demo
+uv run jev-router-demo --cli
 ```
 
 1. Slide 13 → terminal → CLI 실행.
@@ -101,9 +101,9 @@ uv run jev-router-demo
 6. `q` → 브라우저 복귀 → **→ 한 번** → Slide 14에서 결과 해석 → Slide 15 Q&A.
 
 각 명령 뒤 Enter를 누릅니다. Reference route는 metadata이지 모델 판단을 덮어쓰는 값이 아닙니다.
-현재 **두 adapter 모두 generated JSON을 parse**합니다. Jev-like 경로는 Ollama
-`/api/generate` fallback이며 native typed Jev API가 아닙니다. Candidate probability는
-미제공이고 `—`는 미관측입니다. 실제 웹 검색·DB 작업은 실행하지 않습니다.
+LiteLLM만 generated JSON을 parse합니다. 로컬 Ollama를 포함한 Jev 경로는
+`/v1/systemone` typed API를 사용하며 실제 반환된 candidate probabilities를 표시합니다.
+`—`는 미관측입니다. 실제 웹 검색·DB 작업은 실행하지 않습니다.
 연결 실패 시 실제 오류를 설명하고 임의의 성공 수치로 대체하지 않습니다.
 
 ## Content / timing

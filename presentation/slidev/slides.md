@@ -245,7 +245,7 @@ layout: default
 
 <div class="comparison scope-comparison">
   <article class="compare-side decision"><span class="label">개념적 목표</span><h3>Typed / probabilistic 판단</h3><ul><li>정해진 질문과 타입</li><li>후보별 확률이 있는 출력 계약</li><li>정책에 따른 코드 분기</li></ul></article>
-  <article class="compare-side"><span class="label">현재 CLI 구현</span><h3>두 backend의 JSON 생성</h3><ul><li>LiteLLM / Ollama 호출</li><li>JSON parse / schema validation</li><li>판단·비용 표시, 후보 확률 미제공</li></ul></article>
+  <article class="compare-side"><span class="label">현재 CLI 구현</span><h3>생성과 typed 판단 비교</h3><ul><li>LiteLLM / Ollama System One 호출</li><li>Generated JSON / typed answer 검증</li><li>판단·비용·반환된 후보 확률 표시</li></ul></article>
 </div>
 <div class="callout">이 데모는 native typed Jev endpoint의 성능 우위를 입증하지 않습니다.</div>
 <div class="footnote">입력·schema·관측 기준을 맞춘 비교 harness입니다. 웹 검색·DB 변경은 실행하지 않습니다.</div>
@@ -253,7 +253,7 @@ layout: default
 <!--
 0:50 · Demo scope
 - 개념에서 실제 구현으로 넘어가는 명시적인 경계다. Jev-like 이름 때문에 native Jev API로 오해하지 않도록 설명한다.
-- 현재 Ollama adapter도 generation fallback이다. Native confidence, generation-free, zero tokens를 입증하지 않는다.
+- 로컬 Ollama도 System One typed API를 사용한다. 실제 반환된 usage와 후보 확률만 표시하고 zero tokens로 덮어쓰지 않는다.
 - 이 데모의 가치는 동일한 판단 문제를 두 backend에 보내고 결과와 비용을 나란히 관측하는 구조다.
 - 전환: “무엇을 동일하게 맞췄는지 보겠습니다.”
 -->
@@ -269,16 +269,16 @@ layout: default
 <div class="shared-request">SAME FULL REQUEST + ROUTING POLICY</div>
 <div class="router-paths">
   <article><span class="label">LLM ROUTER</span><h3>LiteLLM</h3><code>POST /chat/completions</code><p>Generated JSON</p></article>
-  <article><span class="label">JEV-LIKE ROUTER · FALLBACK</span><h3>Ollama</h3><code>POST /api/generate</code><p>Generated JSON</p></article>
+  <article><span class="label">JEV ROUTER · SYSTEM ONE</span><h3>Ollama</h3><code>POST /v1/systemone</code><p>Typed answers + probabilities</p></article>
 </div>
-<div class="shared-result">↓ Parse / Validate → <strong class="accent">RoutingDecision</strong> → CLI 비교</div>
+<div class="shared-result">↓ Generated parse / Typed validation → <strong class="accent">RoutingDecision</strong> → CLI 비교</div>
 <div class="schema-strip mono"><div>model_tier<strong>fast / standard / reasoning</strong></div><div>needs_web<strong>true / false</strong></div><div>needs_approval<strong>true / false</strong></div></div>
 <div class="footnote">두 호출은 동시에 실행합니다. Backend·모델 차이도 결과에 영향을 줍니다.</div>
 
 <!--
 0:50 · Harness
 - 두 Router는 동일한 full request, routing policy, strict schema를 사용한다. model_tier 실제 값은 lowercase다.
-- LiteLLM은 OpenAI-compatible chat completions, Ollama는 /api/generate에 stream=false, format=json.
+- LiteLLM은 OpenAI-compatible chat completions, Ollama는 /v1/systemone에 model + state + questions를 전송한다.
 - UI는 normalized RoutingResult를 비교하고 실제 후속 실행은 하지 않는다.
 - 동일 schema가 품질·속도의 동일성을 뜻하지는 않는다. 모델 차이도 함께 존재한다.
 - 전환: “세 장면에서 판단의 세 축을 관찰하겠습니다.”
@@ -298,7 +298,7 @@ layout: default
   <article><span class="step">03 / APPROVAL</span><h3>Production DB</h3><p>운영 데이터 정리 요청</p><div class="scenario-question">승인 없이 진행할까?</div></article>
 </div>
 <div class="watch-strip"><strong>판단 결과</strong><span>→</span><span>Latency</span><span>·</span><span>Input / output tokens</span><span>·</span><span>Parsing</span></div>
-<div class="footnote">예상 경로는 scenario metadata입니다. 실제 모델의 응답을 덮어쓰지 않습니다. Confidence는 현재 미제공.</div>
+<div class="footnote">예상 경로는 scenario metadata입니다. 실제 모델의 응답을 덮어쓰지 않습니다. 반환된 후보 확률만 표시합니다.</div>
 
 <!--
 0:40 · Demo cues
@@ -318,7 +318,7 @@ class: live-demo
 # 같은 질문을 보내고,<br><span class="accent">실제 판단을 비교한다.</span>
 
 ```bash
-uv run jev-router-demo
+uv run jev-router-demo --cli
 ```
 
 <div class="demo-workflow"><span><kbd>r</kbd> 두 Router 실행</span><span><kbd>n</kbd> 다음 scenario</span><span><kbd>o</kbd> 응답 확인</span><span><kbd>q</kbd> 종료</span></div>
@@ -345,7 +345,7 @@ layout: default
 
 <div class="comparison interpretation">
   <article class="compare-side"><span class="label">지금 관측한 것</span><h3>이번 호출의 결과</h3><ul><li>Tier / Web / Approval의 일치·차이</li><li>응답 + 검증까지의 latency</li><li>API usage와 parse 성공·실패</li></ul></article>
-  <article class="compare-side decision"><span class="label">다음에 검증할 것</span><h3>실제 적용 가능성</h3><ul><li>평가셋에서의 판단 품질·일관성</li><li>반복 측정, cold / warm 조건</li><li>Native 계약 연결 후 확률·정책 검증</li></ul></article>
+  <article class="compare-side decision"><span class="label">다음에 검증할 것</span><h3>실제 적용 가능성</h3><ul><li>평가셋에서의 판단 품질·일관성</li><li>반복 측정, cold / warm 조건</li><li>반환된 후보 확률의 calibration·정책 검증</li></ul></article>
 </div>
 <div class="key-message">한 번의 빠른 응답이 <span class="accent">더 나은 판단 계층</span>을 뜻하지는 않는다.</div>
 <div class="footnote">모델·tokenizer·cold load가 함께 달라집니다. “—”는 0이 아니라 미관측이며, 이번 호출만으로 방식의 우위를 결론내리지 않습니다.</div>
@@ -355,7 +355,7 @@ layout: default
 - 방금 관측한 실제 결과를 먼저 말한다. 승자를 미리 지정하거나 정적인 성공 수치를 추가하지 않는다.
 - 일치했다고 모두 정확한 것은 아니다. 차이가 나면 request와 policy에 근거해 해석한다.
 - Latency는 개별 HTTP 호출 직전부터 decoding 및 parsing/validation 완료까지, 상대 Router 대기 제외.
-- 높은 확률의 타당성은 calibration 평가가 필요하다. 현재 confidence는 미제공.
+- 반환된 후보 확률의 타당성은 calibration 평가가 필요하다. 후보 확률을 별도로 검증된 confidence score와 동일시하지 않는다.
 - 전환: “마지막으로 Agent를 설계할 때의 기준을 정리하겠습니다.”
 -->
 
@@ -418,14 +418,14 @@ class: appendix
 <div class="metrics-grid">
   <MetricCard label="LATENCY" value="wall-clock" detail="개별 HTTP 요청 시작 → decoding + 판단 검증 완료. 다른 Router의 대기 시간 제외." />
   <MetricCard label="TOKENS" value="API usage" detail="실제 input / output 사용량. 모델별 tokenizer 차이와 미관측 항목을 구분." />
-  <MetricCard label="PARSING" value="parse + validate" detail="판단 JSON 처리·검증 시간. HTTP envelope decoding은 latency에만 포함." />
-  <MetricCard label="CANDIDATE PROBABILITY" value="N/A" detail="현재 endpoint 미제공. 생성한 확신 표현·token logprobs로 대체하지 않음." />
+  <MetricCard label="PARSING" value="LLM only" detail="Generated 판단 JSON 처리·검증 시간. Typed answer 검증과 HTTP decoding은 latency에 포함." />
+  <MetricCard label="CANDIDATE PROBABILITY" value="API values" detail="System One이 반환한 후보 확률. 생성한 확신 표현·token logprobs로 대체하지 않음." />
 </div>
 <div class="footnote">Cold load·cache·모델·출력 길이도 영향을 줍니다. 현재 CLI의 자세한 집계 기준은 repository README를 참고하세요.</div>
 
 <!--
 보충 · 본문 시간에서 제외
-- Ollama input=prompt_eval_count, output=eval_count, 둘 다 있으면 total 합산. LiteLLM은 usage.
+- Ollama System One은 usage.input_tokens / output_tokens, 둘 다 있으면 total 합산. LiteLLM은 chat usage.
 - Generated bytes는 반환된 routing text + 별도 thinking text의 UTF-8 bytes, HTTP envelope가 아니다.
 - 성공 요청만 평균 latency에 포함, errors에는 실패 포함. 실제 usage는 실패 응답에서도 유지.
 -->
@@ -444,8 +444,8 @@ class: appendix
   <article><span class="step">02 / ADAPTER</span><h3>전송·정규화 연결</h3><p>실제 API로 요청<br>RoutingResult로 변환<br>제공된 metric만 기록</p></article>
   <article><span class="step">03 / EVALUATION</span><h3>품질·정책 검증</h3><p>공통 평가셋<br>반복·조건별 측정<br>Calibration·threshold</p></article>
 </div>
-<div class="callout mono">src/jev_router_demo/routers/ollama_jev.py</div>
-<div class="footnote">현재 연결 지점: build_jev_prompt() · parse_jev_response() · OllamaJevRouter.route(). 없는 API나 가짜 metric을 추가하지 않습니다.</div>
+<div class="callout mono">src/jev_router_demo/routers/systemone.py</div>
+<div class="footnote">현재 연결 지점: QUESTIONS · parse_systemone_response() · SystemOneRouter.route(). 없는 API나 가짜 metric을 추가하지 않습니다.</div>
 
 <!--
 보충 · 본문 시간에서 제외

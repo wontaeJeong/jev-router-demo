@@ -28,8 +28,8 @@ Audience: `http://localhost:3030/1` · Presenter: `http://localhost:3030/present
 | 해석·결론 | 14–15 | 관측과 추가 검증, takeaway / Q&A |
 | 보충 | 16–18 | 상세 비교, 측정 정의, native endpoint 연결 지점 |
 
-현재 CLI의 두 adapter는 모두 JSON 생성 후 parse/validate합니다. Jev-like 경로는
-Ollama generation fallback이며 native typed Jev endpoint의 성능 입증이 아닙니다.
+현재 LiteLLM adapter는 JSON 생성 후 parse/validate하고, 로컬 Ollama를 포함한
+Jev adapter는 System One typed API를 사용합니다. 이 데모만으로 성능 우위를 입증하지 않습니다.
 개념도·설명용 값과 실제 구현·측정값을 구분합니다.
 
 ## GitHub Pages

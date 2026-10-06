@@ -6,8 +6,9 @@ import pytest
 
 from jev_router_demo.config import Config
 from jev_router_demo.main import compare
-from jev_router_demo.routers.litellm import LiteLLMRouter
-from jev_router_demo.routers.ollama_jev import OllamaJevRouter, parse_jev_response
+from jev_router_demo.routers.litellm import LiteLLMRouter, parse_llm_response
+from jev_router_demo.routers.factory import create_jev_router
+from jev_router_demo.routers.systemone import parse_systemone_response
 
 
 DECISION = {"model_tier": "reasoning", "needs_web": True, "needs_approval": False}
@@ -21,14 +22,18 @@ def llm_response(text=TEXT):
     }}
 
 
-def jev_response(text=TEXT):
-    return {"response": text, "done": True, "prompt_eval_count": 9, "eval_count": 4}
+def jev_response():
+    return {"model": "jev-like", "answers": {
+        "model_tier": {"type": "choice", "choice": "reasoning"},
+        "needs_web": {"type": "choice", "choice": "true"},
+        "needs_approval": {"type": "choice", "choice": "false"},
+    }, "usage": {"input_tokens": 9, "output_tokens": 4}}
 
 
 def run_pair(handler, config=CONFIG, request="Full original request\nwith another line."):
     async def run():
         async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-            return await compare(request, LiteLLMRouter(client, config), OllamaJevRouter(client, config))
+            return await compare(request, LiteLLMRouter(client, config), create_jev_router(client, config))
     return asyncio.run(run())
 
 
@@ -50,23 +55,26 @@ def test_concurrent_calls_preserve_full_request_and_real_usage():
                 assert body["messages"][1]["content"] == original
                 assert "authorization" not in request.headers
                 return httpx.Response(200, json=llm_response())
-            assert request.url.path == "/api/generate"
-            assert original in body["prompt"]
-            assert body["stream"] is False
+            assert request.url.path == "/v1/systemone"
+            assert body["state"] == original
+            assert set(body) == {"model", "state", "questions"}
             assert "authorization" not in request.headers
             return httpx.Response(200, json=jev_response())
 
         async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-            llm, jev = await compare(original, LiteLLMRouter(client, CONFIG), OllamaJevRouter(client, CONFIG))
+            llm, jev = await compare(original, LiteLLMRouter(client, CONFIG), create_jev_router(client, CONFIG))
         assert llm.decision == jev.decision
         assert (llm.input_tokens, llm.output_tokens, llm.total_tokens) == (12, 5, 17)
         assert (jev.input_tokens, jev.output_tokens, jev.total_tokens) == (9, 4, 13)
-        for result in [llm, jev]:
-            assert result.latency_ms >= result.parse_ms >= 0
-            assert result.parse_required and result.parse_success
-            assert result.generated_bytes == len(TEXT.encode())
-            assert result.probabilities is None
-            assert result.output_kind == "generated"
+        assert llm.latency_ms >= llm.parse_ms >= 0
+        assert llm.parse_required and llm.parse_success
+        assert llm.generated_bytes == len(TEXT.encode())
+        assert llm.output_kind == "generated"
+        assert jev.latency_ms >= 0
+        assert not jev.parse_required and jev.parse_success is None
+        assert jev.parse_ms is None and jev.generated_bytes is None
+        assert jev.output_kind == "typed"
+        assert jev.probabilities is None
     asyncio.run(run())
 
 
@@ -113,8 +121,8 @@ def test_one_backend_failure_keeps_other_result(failure):
         assert llm.parse_success is None
 
 
-@pytest.mark.parametrize("payload", [[], {}, {"response": 5}, {"error": "model not found"}, {"response": TEXT, "done": False}])
-def test_ollama_unexpected_response_is_visible(payload):
+@pytest.mark.parametrize("payload", [[], {}, {"answers": 5}, {"error": "model not found"}, {"response": TEXT, "done": True}])
+def test_jev_unexpected_response_is_visible(payload):
     def handler(request):
         return httpx.Response(200, json=payload if request.url.host == "jev" else llm_response())
     llm, jev = run_pair(handler)
@@ -122,16 +130,21 @@ def test_ollama_unexpected_response_is_visible(payload):
     assert jev.error
 
 
-def test_jev_invalid_decision_retains_generation_metrics():
-    result = parse_jev_response(jev_response('{"model_tier":"super-smart"}'))
-    assert result.parse_success is False
+def test_jev_invalid_decision_retains_typed_usage():
+    payload = jev_response()
+    payload["answers"]["model_tier"]["choice"] = "super-smart"
+    result = parse_systemone_response(payload)
+    assert result.parse_success is None
     assert result.error
     assert result.output_tokens == 4
-    assert result.generated_text == '{"model_tier":"super-smart"}'
+    assert result.generated_text is None
 
 
 def test_missing_usage_is_not_zero_and_thinking_bytes_are_counted():
-    result = parse_jev_response({"response": TEXT, "thinking": "분석", "done": True})
+    payload = llm_response()
+    del payload["usage"]
+    payload["choices"][0]["message"]["reasoning_content"] = "분석"
+    result = parse_llm_response(payload)
     assert result.input_tokens is None
     assert result.output_tokens is None
     assert result.total_tokens is None
@@ -140,25 +153,21 @@ def test_missing_usage_is_not_zero_and_thinking_bytes_are_counted():
 
 
 def test_zero_usage_is_preserved():
-    result = parse_jev_response(jev_response() | {"eval_count": 0})
+    result = parse_systemone_response(jev_response() | {"usage": {"input_tokens": 9, "output_tokens": 0}})
     assert result.output_tokens == 0
 
 
-@pytest.mark.parametrize("host", ["llm", "jev"])
-def test_invalid_generated_unicode_does_not_discard_other_backend(host):
+@pytest.mark.parametrize("field", ["content", "reasoning_content"])
+def test_invalid_generated_unicode_does_not_discard_other_backend(field):
     def handler(request):
         payload = llm_response() if request.url.host == "llm" else jev_response()
-        if request.url.host == host:
-            if host == "llm":
-                payload["choices"][0]["message"]["content"] = "\ud800"
-            else:
-                payload["thinking"] = "\ud800"
+        if request.url.host == "llm":
+            payload["choices"][0]["message"][field] = "\ud800"
         return httpx.Response(200, content=json.dumps(payload).encode("ascii"))
     llm, jev = run_pair(handler)
-    failed, other = (llm, jev) if host == "llm" else (jev, llm)
-    assert "Unicode" in failed.error
-    assert failed.generated_bytes is None
-    assert other.decision
+    assert "Unicode" in llm.error
+    assert llm.generated_bytes is None
+    assert jev.decision
 
 
 def test_invalid_json_encoding_is_backend_error():

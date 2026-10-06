@@ -72,9 +72,10 @@ def test_typed_usage_missing_is_not_zero():
     assert result.input_tokens is None and result.output_tokens is None and result.total_tokens is None
 
 
-def test_session_selects_typed_adapter_and_auth_is_separate():
+@pytest.mark.parametrize("mode", ["systemone", "ollama"])
+def test_session_selects_typed_adapter_and_auth_is_separate(mode):
     async def check():
-        config = Config("http://llm/v1", "baseline", "http://jev", "jev-1.13", "llm-secret", jev_api_mode="systemone", jev_api_key="jev-secret")
+        config = Config("http://llm/v1", "baseline", "http://jev", "jev-1.13", "llm-secret", jev_api_mode=mode, jev_api_key="jev-secret")
         def handler(request):
             if request.url.host == "llm":
                 assert request.headers["authorization"] == "Bearer llm-secret"
