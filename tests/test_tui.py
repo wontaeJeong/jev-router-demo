@@ -1,10 +1,28 @@
 import asyncio
 
 import httpx
-from textual.widgets import Select, TextArea
+from textual.widgets import Select, Static, TextArea
 
 from jev_router_demo.tui import RouterDemoApp
+from jev_router_demo.scenarios import SCENARIOS
 from test_routers import CONFIG, jev_response, llm_response
+
+
+def test_summary_is_displayed_but_cleared_when_request_is_edited():
+    async def check():
+        app = RouterDemoApp(CONFIG)
+        async with app.run_test(size=(120, 42)) as pilot:
+            preview = app.query_one("#request-preview", Static)
+            assert "요청 요약" in str(preview.content)
+            assert SCENARIOS[0].summary in str(preview.content)
+            assert SCENARIOS[0].request in str(preview.content)
+            await pilot.press("e")
+            app.screen.query_one("#request-editor", TextArea).load_text("A different request")
+            await pilot.click("#save-request")
+            assert "요청 요약" not in str(preview.content)
+            assert "A different request" in str(preview.content)
+            assert app.scenario.summary is None
+    asyncio.run(check())
 
 
 def test_navigation_editor_and_narrow_layout():
@@ -12,7 +30,7 @@ def test_navigation_editor_and_narrow_layout():
         app = RouterDemoApp(CONFIG)
         async with app.run_test(size=(120, 42)) as pilot:
             await pilot.press("n")
-            assert app.scenario.label == "FastAPI Concurrency"
+            assert app.scenario.label == "FastAPI 동시성 오류"
             await pilot.press("e")
             editor = app.screen.query_one("#request-editor", TextArea)
             editor.load_text("Custom request\nDo not execute r n p q")
@@ -21,7 +39,7 @@ def test_navigation_editor_and_narrow_layout():
             await pilot.resize_terminal(70, 30)
             assert app.query_one("#cards").has_class("narrow")
             await pilot.press("e", "escape")
-            assert app.scenario.label == "Custom"
+            assert app.scenario.label == "직접 입력"
     asyncio.run(check())
 
 
@@ -67,7 +85,7 @@ def test_custom_selection_opens_editor_and_cancel_restores_scenario():
             assert app.screen.query("#request-editor")
             await pilot.press("escape")
             assert app.query_one("#scenario", Select).value == 0
-            assert app.scenario.label == "Python Utility"
+            assert app.scenario.label == "Python 간단한 활용"
     asyncio.run(check())
 
 

@@ -16,11 +16,11 @@ def parse_llm_response(response: dict[str, Any]) -> RoutingResult:
         result.total_tokens = token_count(usage.get("total_tokens"))
     choices = response.get("choices")
     if not isinstance(choices, list) or not choices or not isinstance(choices[0], dict):
-        result.error = "Unexpected API response: missing chat completion choices."
+        result.error = "예상과 다른 API 응답: 채팅 완성 후보가 없습니다."
         return result
     message = choices[0].get("message")
     if not isinstance(message, dict) or not isinstance(message.get("content"), str):
-        result.error = "Unexpected API response: missing message content (check model/refusal)."
+        result.error = "예상과 다른 API 응답: 메시지 내용이 없습니다 (모델과 응답 거부 여부를 확인해 주세요)."
         return result
     result.generated_text = message["content"]
     thinking = message.get("reasoning_content")

@@ -7,7 +7,7 @@ from uuid import uuid4
 from jev_router_demo.models import RoutingResult
 
 
-SECTIONS = {"request": "Request JSON", "response": "Response JSON", "generated": "Generated", "thinking": "Thinking", "raw": "HTTP raw text"}
+SECTIONS = {"request": "요청 JSON", "response": "응답 JSON", "generated": "생성 출력", "thinking": "추론 내용", "raw": "HTTP 원문"}
 
 
 def abbreviate(value: object) -> tuple[object, int]:
@@ -33,19 +33,19 @@ def abbreviate(value: object) -> tuple[object, int]:
 
 def section_value(result: RoutingResult, section: str) -> tuple[object, bool]:
     if section not in SECTIONS:
-        raise ValueError("Unknown inspector section")
+        raise ValueError("알 수 없는 상세 보기 항목입니다")
     exchange = result.http
     if section == "request":
-        return (exchange.request_body, True) if exchange else ("No HTTP request recorded.", False)
+        return (exchange.request_body, True) if exchange else ("기록된 HTTP 요청이 없습니다.", False)
     if section == "response":
         if exchange:
             if exchange.response_is_json:
                 return exchange.response_json, True
-            return exchange.response_text if exchange.response_text is not None else "No response received.", False
-        return result.raw_response if result.raw_response is not None else "No response received.", not isinstance(result.raw_response, str)
+            return exchange.response_text if exchange.response_text is not None else "수신한 응답이 없습니다.", False
+        return result.raw_response if result.raw_response is not None else "수신한 응답이 없습니다.", not isinstance(result.raw_response, str)
     if section == "raw":
-        return exchange.response_text if exchange and exchange.response_text is not None else "No response received.", False
-    return getattr(result, "generated_text" if section == "generated" else "thinking_text") or "Not returned by this endpoint.", False
+        return exchange.response_text if exchange and exchange.response_text is not None else "수신한 응답이 없습니다.", False
+    return getattr(result, "generated_text" if section == "generated" else "thinking_text") or "이 엔드포인트에서 반환하지 않은 항목입니다.", False
 
 
 def render_section(result: RoutingResult, section: str, full: bool = False) -> tuple[str, bool, int]:
@@ -56,7 +56,7 @@ def render_section(result: RoutingResult, section: str, full: bool = False) -> t
         text = json.dumps(displayed, ensure_ascii=False, indent=2) if is_json else str(displayed)
     except RecursionError:
         # Preserve an unsupported JSON envelope as its original HTTP text.
-        value = result.http.response_text if result.http else "Response nesting is too deep to format."
+        value = result.http.response_text if result.http else "응답 중첩이 너무 깊어 형식을 지정할 수 없습니다."
         preview, count = abbreviate(value)
         text, is_json = value if full else preview, False
     return text, is_json, count

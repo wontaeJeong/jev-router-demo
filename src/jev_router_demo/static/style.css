@@ -40,6 +40,10 @@ h2 { font-size:17px; font-weight:600; margin:3px 0 0; letter-spacing:-.3px; }
 .actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 .primary { background:var(--green); border-color:var(--green); color:#0d2b21; font-weight:650; }
 .primary:hover { background:#97f1d3; border-color:#97f1d3; }
+.request-summary { margin:0 24px 20px; padding:14px 18px; background:#16302b; border:1px solid #2c5c4b; border-radius:7px; }
+.request-summary .section-label { color:var(--green); letter-spacing:.5px; }
+.request-summary p { margin-top:6px; line-height:1.8; word-break:keep-all; overflow-wrap:anywhere; }
+.request-panel>.section-label { margin:0 24px 8px; letter-spacing:.5px; }
 .request-text { margin:0 24px 20px; padding:16px 20px; border-left:2px solid #426856; color:#c4d0df; background:#0d1520; font-size:13px; white-space:pre-wrap; overflow-wrap:anywhere; max-height:180px; overflow:auto; }
 .request-footer { display:flex; justify-content:space-between; gap:15px; border-top:1px solid var(--line); padding:10px 24px; color:var(--muted); font-size:10px; }
 .results-heading { display:flex; justify-content:space-between; align-items:center; margin:26px 0 12px; font-size:11px; color:var(--muted); }
@@ -56,7 +60,7 @@ h2 { font-size:17px; font-weight:600; margin:3px 0 0; letter-spacing:-.3px; }
 @keyframes pulse { 50% { opacity:.55; } }
 .model-name { color:var(--muted); font:11px ui-monospace,monospace; margin:8px 0 22px; overflow-wrap:anywhere; }
 .route-decision { display:flex; align-items:center; justify-content:space-between; gap:15px; border-bottom:1px solid var(--line); padding-bottom:20px; }
-.tier { font-size:28px; line-height:1.2; font-weight:650; letter-spacing:-.8px; }
+.tier { font-size:28px; line-height:1.2; font-weight:650; letter-spacing:-.8px; word-break:keep-all; }
 .tier-label { font-size:9px; color:var(--muted); letter-spacing:1.8px; margin-top:6px; }
 .route-flags { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
 .flag { font-size:10px; background:#1a293a; border:1px solid #30435b; padding:3px 8px; border-radius:4px; color:#afc3dc; }

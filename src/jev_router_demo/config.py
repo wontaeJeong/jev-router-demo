@@ -37,8 +37,8 @@ def load_config() -> Config:
     mode = os.getenv("JEV_API_MODE", "systemone").strip().lower()
     if mode == "ollama":
         mode = "systemone"
-    if mode not in {"ollama", "systemone", "decisions"}:
-        raise ValueError("JEV_API_MODE must be systemone, decisions or ollama.")
+    if mode not in {"systemone", "decisions"}:
+        raise ValueError("JEV_API_MODE는 systemone, decisions, ollama 중 하나여야 합니다.")
     keys = ["LLM_BASE_URL", "LLM_MODEL", "JEV_BASE_URL", "JEV_MODEL", "JEV_ENDPOINT_URL", "JEV_API_KEY"]
     values = {key: os.getenv(key, "").strip() for key in keys}
     required = ["LLM_BASE_URL", "LLM_MODEL", "JEV_MODEL"]
@@ -47,8 +47,8 @@ def load_config() -> Config:
     missing = [key for key in required if not values[key]]
     if missing:
         raise ValueError(
-            "Missing configuration: " + ", ".join(missing)
-            + "\nCopy .env.example to .env.local and configure the endpoints."
+            "필수 설정 누락: " + ", ".join(missing)
+            + "\n.env.example을 .env.local로 복사하고 엔드포인트를 설정해 주세요."
         )
     for key in ["LLM_BASE_URL", "JEV_BASE_URL", "JEV_ENDPOINT_URL"]:
         if not values[key]:
@@ -59,18 +59,18 @@ def load_config() -> Config:
             # accepts malformed ports that HTTPX would reject at request time.
             port = url.port
             if url.scheme not in {"http", "https"} or not url.hostname or port == 0:
-                raise ValueError("invalid scheme, hostname or port")
+                raise ValueError("프로토콜, 호스트 이름 또는 포트가 잘못되었습니다")
         except ValueError as exc:
-            raise ValueError(f"{key} must be a valid http:// or https:// endpoint URL: {exc}") from exc
+            raise ValueError(f"{key}에 유효한 http:// 또는 https:// 엔드포인트 URL을 지정해 주세요: {exc}") from exc
     endpoint_host = urlsplit(values["JEV_ENDPOINT_URL"] or values["JEV_BASE_URL"]).hostname
     if endpoint_host == "openrouter.ai" and not values["JEV_API_KEY"]:
-        raise ValueError("Missing configuration: JEV_API_KEY is required for OpenRouter System One / Decisions.")
+        raise ValueError("필수 설정 누락: OpenRouter System One / Decisions에는 JEV_API_KEY가 필요합니다.")
     try:
         timeout = float(os.getenv("REQUEST_TIMEOUT", "60"))
     except ValueError as exc:
-        raise ValueError("REQUEST_TIMEOUT must be a positive number of seconds.") from exc
+        raise ValueError("REQUEST_TIMEOUT은 양수인 시간(초)이어야 합니다.") from exc
     if not math.isfinite(timeout) or timeout <= 0:
-        raise ValueError("REQUEST_TIMEOUT must be a finite positive number of seconds.")
+        raise ValueError("REQUEST_TIMEOUT은 유한한 양수인 시간(초)이어야 합니다.")
     return Config(
         llm_base_url=values["LLM_BASE_URL"].rstrip("/"),
         llm_model=values["LLM_MODEL"],
