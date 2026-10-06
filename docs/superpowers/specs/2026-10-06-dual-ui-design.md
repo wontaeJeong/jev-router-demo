@@ -10,6 +10,35 @@ adapter와 측정 로직을 재사용하고, Textual TUI와 로컬 웹 대시보
 사용자는 2026-10-06에 공통 코어 기반 TUI + 로컬 웹 구성을 승인했다.
 이 문서는 구현 전 검토할 상세 설계다.
 
+### 추가 요구사항: 실제 Jev System One / Decisions (2026-10-07)
+
+사용자는 구현 중 OpenRouter Decisions endpoint 지원을 함께 추가하도록 승인했고,
+Jev는 Ollama 생성 모델이 아닌 System One 스타일이라는 점을 확인했다.
+이 추가사항은 아래의 기존 Ollama-only 설명에 우선한다.
+
+- `JEV_API_MODE=systemone | decisions | ollama`로 전송 계약을 명시한다.
+- System One과 Decisions는 공통 `model + state + questions → answers + usage`
+  adapter로 처리한다. endpoint URL을 지정하면 경로를 덧붙이지 않는다.
+- OpenRouter의 두 공식 경로는 `https://openrouter.ai/api/v1/systemone`과
+  `https://openrouter.ai/api/alpha/decisions`다. 로컬 호환 endpoint도 지원한다.
+- `JEV_ENDPOINT_URL`이 없으면 `JEV_BASE_URL`에 모드별 `/v1/systemone`,
+  `/alpha/decisions`, `/api/generate`를 붙인다. 인증은 별도의 `JEV_API_KEY`를 사용한다.
+- 새 `.env.example`은 `systemone`을 기본 예시로 제공한다. 기존 환경에서 모드를
+  생략한 경우는 `ollama`로 유지하며 런타임 API 자동 추정은 하지 않는다.
+- 세 질문 모두 Choice를 사용한다. model tier는 `fast/standard/reasoning`,
+  web/approval은 `true/false` label로 명시적 매핑한다. 숨겨진 Noul threshold는 없다.
+- 응답 answer type·label·확률 범위를 검증하고 API가 제공한 확률만 표시한다.
+  raw API response와 실제 전송 request는 다른 adapter와 같은 방식으로 보관한다.
+- typed 결과는 `output_kind=typed`, `parse_required=False`다. typed validation과
+  HTTP JSON decoding은 latency에 포함하며 generated-decision parse time은 미제공이다.
+  API가 반환한 input/output token usage를 그대로 쓰고 output tokens를 0으로 만들지 않는다.
+- 실제 생성 문자열·thinking이 없으므로 generated text/bytes는 미제공으로 표시한다.
+- 두 UI의 API mode 안내는 실제 설정에 따라 바뀐다. Ollama는 호환용 generated
+  fallback임을 명시하고 실제 Jev System One API와 구분한다.
+
+출처: [System One](https://openrouter.ai/docs/guides/community/typesafe-sdk),
+[Decisions](https://openrouter.ai/docs/guides/community/jev-tutorial).
+
 ## 기술 선택과 실행
 
 - Python 3.12+, httpx, Pydantic, 기존 LiteLLM/Ollama adapter를 유지한다.
@@ -38,6 +67,8 @@ HTTP response의 JSON 디코딩 성공 여부와 decision parse 성공 여부를
 JSON인 HTTP 오류 응답도 JSON으로 탐색할 수 있다. JSON이 아닌 오류 바디는
 텍스트로 표시한다. 원본 텍스트와 decoded JSON을 함께 보관하여 전체 원문 보기와
 JSON 가독성 보기를 지원한다. 실제 byte-level packet capture는 범위에 포함하지 않는다.
+JSON nesting이 formatter가 지원하는 깊이를 초과하면 원문 텍스트로 표시하고,
+해당 backend 오류가 다른 backend의 정상 결과 전달을 막지 않게 한다.
 
 ## 공통 실행 서비스
 

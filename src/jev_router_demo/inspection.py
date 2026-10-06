@@ -48,19 +48,29 @@ def section_value(result: RoutingResult, section: str) -> tuple[object, bool]:
     return getattr(result, "generated_text" if section == "generated" else "thinking_text") or "Not returned by this endpoint.", False
 
 
-def inspect_result(result: RoutingResult, section: str, full: bool = False) -> str:
+def render_section(result: RoutingResult, section: str, full: bool = False) -> tuple[str, bool, int]:
     value, is_json = section_value(result, section)
-    if not full:
-        value, _ = abbreviate(value)
-    return json.dumps(value, ensure_ascii=False, indent=2) if is_json else str(value)
+    try:
+        preview, count = abbreviate(value)
+        displayed = value if full else preview
+        text = json.dumps(displayed, ensure_ascii=False, indent=2) if is_json else str(displayed)
+    except RecursionError:
+        # Preserve an unsupported JSON envelope as its original HTTP text.
+        value = result.http.response_text if result.http else "Response nesting is too deep to format."
+        preview, count = abbreviate(value)
+        text, is_json = value if full else preview, False
+    return text, is_json, count
+
+
+def inspect_result(result: RoutingResult, section: str, full: bool = False) -> str:
+    return render_section(result, section, full)[0]
 
 
 def inspector_data(result: RoutingResult) -> dict:
     sections = {}
     for section in SECTIONS:
-        value, is_json = section_value(result, section)
-        _, count = abbreviate(value)
-        sections[section] = {"preview": inspect_result(result, section), "full": inspect_result(result, section, full=True), "omitted": count, "is_json": is_json}
+        preview, is_json, count = render_section(result, section)
+        sections[section] = {"preview": preview, "full": inspect_result(result, section, full=True), "omitted": count, "is_json": is_json}
     return sections
 
 

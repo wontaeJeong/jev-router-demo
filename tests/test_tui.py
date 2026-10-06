@@ -52,4 +52,35 @@ def test_partial_result_and_full_inspector(tmp_path):
                 await pilot.click("#full-toggle")
                 assert "중략" not in app.inspector_text
                 assert not app.query_one("#scenario", Select).disabled
+                await pilot.resize_terminal(70, 30)
+                await pilot.pause()
+                assert app.query_one("#json-log").region.height >= 5
+    asyncio.run(check())
+
+
+def test_custom_selection_opens_editor_and_cancel_restores_scenario():
+    async def check():
+        app = RouterDemoApp(CONFIG)
+        async with app.run_test(size=(100, 40)) as pilot:
+            app.query_one("#scenario", Select).value = -1
+            await pilot.pause()
+            assert app.screen.query("#request-editor")
+            await pilot.press("escape")
+            assert app.query_one("#scenario", Select).value == 0
+            assert app.scenario.label == "Python Utility"
+    asyncio.run(check())
+
+
+def test_multiline_preview_is_keyboard_scrollable():
+    async def check():
+        app = RouterDemoApp(CONFIG)
+        async with app.run_test(size=(70, 30)) as pilot:
+            await pilot.press("e")
+            app.screen.query_one("#request-editor", TextArea).load_text("line\n" * 100)
+            await pilot.click("#save-request")
+            preview = app.query_one("#request-preview-scroll")
+            preview.focus()
+            await pilot.press("end")
+            await pilot.pause()
+            assert preview.scroll_y > 0
     asyncio.run(check())

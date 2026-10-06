@@ -82,3 +82,22 @@ def test_empty_request_is_rejected_before_network():
             with pytest.raises(ValueError, match="empty"):
                 await anext(DemoSession(CONFIG, client).run(" \n"))
     asyncio.run(check())
+
+
+@pytest.mark.parametrize("depth", [1100, 10000])
+def test_deep_malformed_response_does_not_cancel_healthy_backend(depth):
+    raw = "[" * depth + "0" + "]" * depth
+    async def check():
+        async def handler(request):
+            if request.url.host == "llm":
+                return httpx.Response(200, text=raw)
+            await asyncio.sleep(0.02)
+            return httpx.Response(200, json=jev_response())
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            session = DemoSession(CONFIG, client)
+            events = [event async for event in session.run("request")]
+            assert events[-1]["type"] == "finished"
+            assert session.states == {"LLM": "error", "JEV": "success"}
+            assert session.metrics["JEV"].successes == 1
+            assert events[-1]["snapshot"]["results"]["LLM"]["inspector"]["raw"]["full"] == raw
+    asyncio.run(check())

@@ -12,7 +12,7 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Footer, Label, RichLog, Select, Static, TabbedContent, TabPane, Tabs, Tab, TextArea
 
 from jev_router_demo.config import Config
-from jev_router_demo.inspection import SECTIONS, abbreviate, export_result, inspect_result, section_value
+from jev_router_demo.inspection import SECTIONS, abbreviate, export_result, render_section
 from jev_router_demo.scenarios import SCENARIOS, Scenario
 from jev_router_demo.session import DemoSession, safe_display
 from jev_router_demo.ui import cumulative_panel, number
@@ -51,6 +51,10 @@ class RequestEditor(ModalScreen[str | None]):
             self.action_save()
         else:
             self.action_cancel()
+
+
+class RequestPreview(VerticalScroll):
+    can_focus = True
 
 
 def card_content(name, model, state, result):
@@ -104,12 +108,14 @@ class RouterDemoApp(App):
 
     def compose(self) -> ComposeResult:
         yield Static(Text("JEV / ROUTER LAB   ·   Live decision comparison", style="bold cyan"), id="brand")
-        yield Static("ROUTING-ONLY SIMULATION  ·  No downstream execution  ·  Ollama uses generated decisions", id="subtitle")
+        backend_note = "Ollama generated fallback" if self.config.jev_api_mode == "ollama" else self.config.jev_api_mode.upper() + " typed API"
+        yield Static("ROUTING-ONLY SIMULATION  ·  No downstream execution  ·  Jev: " + backend_note, id="subtitle")
         with Horizontal(classes="toolbar"):
             yield Select([(f"{i+1:02}  {item.label}", i) for i, item in enumerate(SCENARIOS)] + [("Custom request", -1)], value=0, allow_blank=False, id="scenario")
             yield Button("Run  [r]", variant="primary", id="run")
             yield Button("Edit  [e]", id="edit")
-        yield Static(id="request-preview")
+        with RequestPreview(id="request-preview-scroll"):
+            yield Static(id="request-preview")
         with TabbedContent(id="views"):
             with TabPane("Comparison", id="comparison"):
                 with VerticalScroll():
@@ -146,7 +152,8 @@ class RouterDemoApp(App):
 
     def refresh_request(self):
         preview, count = abbreviate(self.scenario.request)
-        text = Text(self.scenario.label + "\n", style="bold")
+        text = Text()
+        text.append(self.scenario.label + "\n", style="bold")
         text.append(safe_display(preview))
         if count:
             text.append("\n요약 표시 · 원본 변경 없음", style="dim")
@@ -174,9 +181,8 @@ class RouterDemoApp(App):
             self.query_one("#preview-label", Static).update("Waiting for a result.")
             log.write(self.inspector_text)
             return
-        value, is_json = section_value(result, self.section)
-        _, count = abbreviate(value)
-        self.inspector_text = safe_display(inspect_result(result, self.section, full=self.full))
+        text, is_json, count = render_section(result, self.section, full=self.full)
+        self.inspector_text = safe_display(text)
         exchange = result.http
         self.query_one("#http-meta", Static).update(Text(f"{exchange.method} {exchange.url} · HTTP {exchange.status_code or 'no response'}") if exchange else Text(name))
         self.query_one("#preview-label", Static).update("전체 보기 · Export always saves original" if self.full else f"요약 표시 · {count}개 중략 · 원본 변경 없음")
@@ -185,12 +191,16 @@ class RouterDemoApp(App):
     def on_select_changed(self, event: Select.Changed):
         if event.select.id == "scenario" and not self.session.running:
             if event.value != -1:
+                if self.scenario is SCENARIOS[int(event.value)]:
+                    return
                 self.index = int(event.value)
                 self.scenario = SCENARIOS[self.index]
                 self.session.results.clear()
                 self.session.states = dict.fromkeys(self.session.routers, "idle")
                 self.refresh_request()
                 self.refresh_results()
+            elif self.scenario.label != "Custom":
+                self.action_edit()
         elif event.select.id == "router":
             self.refresh_inspector()
 
@@ -198,6 +208,9 @@ class RouterDemoApp(App):
         if event.tabs.id == "sections":
             self.section = event.tab.id
             self.refresh_inspector()
+
+    def on_tabbed_content_tab_activated(self, event: TabbedContent.TabActivated):
+        self.set_class(self.query_one("#views", TabbedContent).active != "comparison", "detail-view")
 
     def on_button_pressed(self, event: Button.Pressed):
         actions = {"run": self.action_run_compare, "edit": self.action_edit, "full-toggle": self.toggle_full, "export": self.export_original}
@@ -241,6 +254,8 @@ class RouterDemoApp(App):
             self.session.states = dict.fromkeys(self.session.routers, "idle")
             self.refresh_request()
             self.refresh_results()
+        elif self.scenario.label != "Custom":
+            self.query_one("#scenario", Select).value = self.index
 
     def action_inspect(self):
         if not isinstance(self.screen, RequestEditor):

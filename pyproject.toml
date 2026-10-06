@@ -1,7 +1,7 @@
 [project]
 name = "jev-router-demo"
 version = "0.1.0"
-description = "Rich CLI comparison of local agent routing backends"
+description = "Terminal and local web comparison of typed and generative routing backends"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

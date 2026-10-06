@@ -12,12 +12,14 @@ from jev_router_demo.metrics import RouterMetrics
 from jev_router_demo.models import RoutingResult
 from jev_router_demo.routers.litellm import LiteLLMRouter
 from jev_router_demo.routers.ollama_jev import OllamaJevRouter
+from jev_router_demo.routers.systemone import SystemOneRouter
+from jev_router_demo.routers.factory import create_jev_router
 from jev_router_demo.scenarios import SCENARIOS, Scenario
 from jev_router_demo.ui import render_screen, show_raw_outputs
 
 
 async def compare(
-    request: str, llm: LiteLLMRouter, jev: OllamaJevRouter,
+    request: str, llm: LiteLLMRouter, jev: OllamaJevRouter | SystemOneRouter,
 ) -> tuple[RoutingResult, RoutingResult]:
     llm_result, jev_result = await asyncio.gather(llm.route(request), jev.route(request))
     return llm_result, jev_result
@@ -31,7 +33,7 @@ async def interactive(config: Config, console: Console) -> None:
     message = "Commands use Enter. Both routers use actual endpoint responses."
     async with httpx.AsyncClient() as client:
         llm = LiteLLMRouter(client, config)
-        jev = OllamaJevRouter(client, config)
+        jev = create_jev_router(client, config)
         while True:
             render_screen(console, scenario, index, results, metrics, message)
             command = console.input("\nCommand > ").strip().lower()

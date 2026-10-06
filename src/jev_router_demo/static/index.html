@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Jev / Router Lab</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2372dfbb'/%3E%3Ctext x='7' y='24' font-size='25' font-family='sans-serif' font-weight='bold'%3Ej%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="/static/style.css">
   <script src="/static/app.js" defer></script>
 </head>
@@ -39,7 +40,7 @@
       <pre id="json-view" tabindex="0" role="tabpanel" aria-label="HTTP body"><code id="json-code">Run a comparison to inspect the actual HTTP request and response.</code></pre>
     </section>
     <section class="metrics-panel"><div class="panel-heading"><div><span class="section-label">THIS SESSION</span><h2>Cumulative metrics</h2></div><span class="muted">Successful requests only for average latency</span></div><div class="table-scroll"><table><thead><tr><th>Measurement</th><th>LLM</th><th>Jev</th></tr></thead><tbody id="metrics"></tbody></table></div></section>
-    <footer>Routing decisions only · No downstream execution · Ollama fallback generates decision JSON.<br>Observed values are affected by model, cache and cold-load differences. “—” means unavailable, not zero.</footer>
+    <footer>Routing decisions only · No downstream execution · <span id="backend-note">Waiting for API configuration.</span><br>Observed values are affected by model, cache and cold-load differences. “—” means unavailable, not zero.</footer>
   </main>
   <dialog id="request-dialog"><form method="dialog" id="request-form"><div class="eyebrow">MAKE IT YOUR OWN</div><h2>Edit request</h2><p>Multiline text is sent in full. The dashboard shows a shortened preview.</p><textarea id="request-editor" rows="10" aria-label="Custom request" required></textarea><div class="actions"><button type="button" id="cancel-edit">Cancel</button><button class="primary" type="submit">Use request</button></div></form></dialog>
   <div id="toast" role="status" hidden></div>

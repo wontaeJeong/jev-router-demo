@@ -1,7 +1,7 @@
 """Frontend-independent, incremental comparison and session measurements."""
 
 import asyncio
-from dataclasses import asdict
+from dataclasses import asdict, fields
 
 import httpx
 
@@ -9,7 +9,7 @@ from jev_router_demo.config import Config
 from jev_router_demo.inspection import inspector_data
 from jev_router_demo.metrics import RouterMetrics
 from jev_router_demo.routers.litellm import LiteLLMRouter
-from jev_router_demo.routers.ollama_jev import OllamaJevRouter
+from jev_router_demo.routers.factory import create_jev_router
 
 
 def safe_display(value):
@@ -25,8 +25,10 @@ def safe_display(value):
 
 class DemoSession:
     def __init__(self, config: Config, client: httpx.AsyncClient):
-        self.routers = {"LLM": LiteLLMRouter(client, config), "JEV": OllamaJevRouter(client, config)}
+        self.routers = {"LLM": LiteLLMRouter(client, config), "JEV": create_jev_router(client, config)}
+        self.jev_api_mode = config.jev_api_mode
         self.models = {"LLM": config.llm_model, "JEV": config.jev_model}
+        self.api_modes = {"LLM": "chat-completions", "JEV": config.jev_api_mode}
         self.metrics = {name: RouterMetrics() for name in self.routers}
         self.states = dict.fromkeys(self.routers, "idle")
         self.results = {}
@@ -38,9 +40,10 @@ class DemoSession:
     def snapshot(self) -> dict:
         results = {}
         for name, result in self.results.items():
-            data = asdict(result)
-            data.pop("http")
-            data.pop("raw_response")
+            # Raw envelopes can be deeply nested malformed data. Do not copy
+            # them recursively just to discard them from frontend snapshots.
+            data = {field.name: getattr(result, field.name) for field in fields(result)
+                    if field.name not in {"http", "raw_response", "decision"}}
             data["decision"] = result.decision.model_dump() if result.decision else None
             data["model"] = self.models[name]
             data["inspector"] = inspector_data(result)
@@ -54,7 +57,7 @@ class DemoSession:
                 comparison["latency_ratio"] = llm.latency_ms / jev.latency_ms
             if llm.output_tokens is not None and jev.output_tokens is not None:
                 comparison["output_token_difference"] = llm.output_tokens - jev.output_tokens
-        return safe_display({"run_id": self.run_id, "running": self.running, "scenario_id": self.scenario_id,
+        return safe_display({"run_id": self.run_id, "running": self.running, "scenario_id": self.scenario_id, "api_modes": self.api_modes,
                              "states": dict(self.states), "results": results, "metrics": metrics, "comparison": comparison})
 
     async def run(self, request: str, scenario_id: int | None = None):

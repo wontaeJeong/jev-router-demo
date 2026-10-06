@@ -3,7 +3,7 @@ import pytest
 from jev_router_demo.config import load_config
 
 
-KEYS = ["LLM_BASE_URL", "LLM_API_KEY", "LLM_MODEL", "JEV_BASE_URL", "JEV_MODEL", "REQUEST_TIMEOUT"]
+KEYS = ["LLM_BASE_URL", "LLM_API_KEY", "LLM_MODEL", "JEV_BASE_URL", "JEV_MODEL", "REQUEST_TIMEOUT", "JEV_API_MODE", "JEV_ENDPOINT_URL", "JEV_API_KEY"]
 
 
 @pytest.fixture
@@ -50,4 +50,30 @@ def test_invalid_endpoint_has_setting_name(clean_env, monkeypatch, url):
     monkeypatch.setenv("JEV_BASE_URL", "http://localhost")
     monkeypatch.setenv("JEV_MODEL", "model")
     with pytest.raises(ValueError, match="LLM_BASE_URL"):
+        load_config()
+
+
+@pytest.mark.parametrize("mode", ["systemone", "decisions"])
+def test_typed_mode_accepts_full_url_without_base(clean_env, monkeypatch, mode):
+    settings = {"LLM_BASE_URL": "http://llm/v1", "LLM_MODEL": "baseline", "JEV_MODEL": "typesafe/jev-1.13",
+                "JEV_API_MODE": mode, "JEV_ENDPOINT_URL": "https://openrouter.ai/api/alpha/decisions", "JEV_API_KEY": "test-key"}
+    for key, value in settings.items():
+        monkeypatch.setenv(key, value)
+    config = load_config()
+    assert config.jev_api_mode == mode
+    assert config.jev_endpoint_url == "https://openrouter.ai/api/alpha/decisions"
+    assert config.jev_base_url == ""
+
+
+def test_unknown_api_mode_is_rejected(clean_env, monkeypatch):
+    monkeypatch.setenv("JEV_API_MODE", "guess")
+    with pytest.raises(ValueError, match="JEV_API_MODE"):
+        load_config()
+
+
+def test_openrouter_typed_endpoint_requires_its_own_key(clean_env, monkeypatch):
+    for key, value in {"LLM_BASE_URL": "http://llm/v1", "LLM_MODEL": "baseline", "JEV_MODEL": "typesafe/jev-1.13",
+                       "JEV_API_MODE": "systemone", "JEV_ENDPOINT_URL": "https://openrouter.ai/api/v1/systemone"}.items():
+        monkeypatch.setenv(key, value)
+    with pytest.raises(ValueError, match="JEV_API_KEY"):
         load_config()

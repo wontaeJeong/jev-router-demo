@@ -4,7 +4,9 @@ Screen { background: #0b1220; color: #d9e3f0; }
 .toolbar { height: 3; margin: 1 2 0 2; }
 #scenario { width: 1fr; margin-right: 1; }
 .toolbar Button { margin-left: 1; min-width: 12; }
-#request-preview { height: 6; margin: 1 2; padding: 0 1; border-left: thick #536881; overflow-y: auto; }
+#request-preview-scroll { height: 6; margin: 1 2; padding: 0 1; border-left: thick #536881; }
+#request-preview-scroll:focus { border-left: thick #60b9f0; }
+#request-preview { height: auto; }
 #views { height: 1fr; margin: 0 1; }
 TabPane { padding: 1; }
 #cards { height: auto; }
@@ -26,4 +28,8 @@ RequestEditor { align: center middle; background: #000000 65%; }
 #editor-dialog Label { height: 2; }
 #request-editor { height: 1fr; }
 .compact .toolbar { margin: 0 1; }
-.compact #request-preview { height: 5; margin: 1; }
+.compact #request-preview-scroll { height: 5; margin: 1; }
+.detail-view #request-preview-scroll { display: none; }
+.compact #http-meta { height: 1; padding: 0; }
+.compact #preview-label { height: 1; padding: 0; }
+.compact #status { height: 1; }
