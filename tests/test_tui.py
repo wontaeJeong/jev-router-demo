@@ -1,9 +1,12 @@
 import asyncio
 
 import httpx
+from rich.console import Console
 from textual.widgets import Select, Static, TextArea
+from textual.containers import VerticalScroll
 
 from jev_router_demo.tui import RouterDemoApp
+from jev_router_demo.models import RoutingDecision, RoutingResult
 from jev_router_demo.scenarios import SCENARIOS
 from test_routers import CONFIG, jev_response, llm_response
 
@@ -15,7 +18,9 @@ def test_summary_is_displayed_but_cleared_when_request_is_edited():
             preview = app.query_one("#request-preview", Static)
             assert "요청 요약" in str(preview.content)
             assert SCENARIOS[0].summary in str(preview.content)
-            assert SCENARIOS[0].request in str(preview.content)
+            assert SCENARIOS[0].request not in str(preview.content)
+            await pilot.press("x")
+            assert SCENARIOS[0].request in str(app.query_one("#request-original", Static).content)
             await pilot.press("e")
             app.screen.query_one("#request-editor", TextArea).load_text("A different request")
             await pilot.click("#save-request")
@@ -94,11 +99,82 @@ def test_multiline_preview_is_keyboard_scrollable():
         app = RouterDemoApp(CONFIG)
         async with app.run_test(size=(70, 30)) as pilot:
             await pilot.press("e")
-            app.screen.query_one("#request-editor", TextArea).load_text("line\n" * 100)
+            request = "\n\n" + "line\n" * 100 + "middle sentinel\n" + "tail\n" * 100
+            app.screen.query_one("#request-editor", TextArea).load_text(request)
             await pilot.click("#save-request")
-            preview = app.query_one("#request-preview-scroll")
+            assert "line" in str(app.query_one("#request-preview", Static).content)
+            await pilot.press("x")
+            assert request in str(app.query_one("#request-original", Static).content)
+            preview = app.query_one("#request-original-scroll")
             preview.focus()
             await pilot.press("end")
             await pilot.pause()
             assert preview.scroll_y > 0
+    asyncio.run(check())
+
+
+def test_selected_candidate_is_actual_answer_not_probability_argmax():
+    from jev_router_demo.tui import probability_content
+
+    result = RoutingResult("JEV", decision=RoutingDecision(
+        model_tier="standard", needs_web=False, needs_approval=True),
+        probabilities={"model_tier": {"fast": 0.8, "standard": 0.2},
+                       "needs_web": {"true": 0.0, "false": 1.0}})
+    console = Console(width=60, color_system=None)
+    with console.capture() as capture:
+        console.print(probability_content("JEV", "model", "success", result))
+    lines = capture.get().splitlines()
+    assert any("▶" in line and "일반 처리" in line and "20.0%" in line for line in lines)
+    assert any("빠른 처리" in line and "80.0%" in line and "▶" not in line for line in lines)
+    assert any("▶" in line and "불필요" in line and "100.0%" in line for line in lines)
+    assert any("필요" in line and "0.0%" in line for line in lines)
+    assert "사용자 승인" in capture.get() and "미제공" in capture.get()
+    assert "█" in capture.get()
+
+
+def test_summary_and_details_remain_accessible_on_short_terminal():
+    async def check():
+        app = RouterDemoApp(CONFIG)
+        async with app.run_test(size=(80, 24)) as pilot:
+            app.session.results["LLM"] = RoutingResult("LLM", decision=RoutingDecision(
+                model_tier="fast", needs_web=False, needs_approval=False))
+            app.session.results["JEV"] = RoutingResult("JEV", decision=RoutingDecision(
+                model_tier="standard", needs_web=True, needs_approval=False), output_kind="typed")
+            app.refresh_results()
+            summary = str(app.query_one("#comparison-summary", Static).content)
+            assert "모델 등급" in summary and "웹 검색" in summary
+            await pilot.press("d")
+            target = app.query_one("#probability-JEV", Static)
+            scroll = app.query_one("#decisions VerticalScroll", VerticalScroll)
+            scroll.focus()
+            await pilot.press("end")
+            await pilot.pause()
+            assert target.region.intersection(scroll.content_region).height > 0
+            console = Console(width=60, color_system=None)
+            with console.capture() as capture:
+                console.print(app.query_one("#probability-JEV", Static).content)
+            assert "미제공" in capture.get()
+            await pilot.press("x")
+            assert app.query_one("#request-original-scroll").region.height >= 5
+            await pilot.press("c")
+            scroll = app.query_one("#comparison VerticalScroll", VerticalScroll)
+            scroll.focus()
+            await pilot.press("end")
+            await pilot.pause()
+            assert app.query_one("#comparison-summary").region.intersection(scroll.content_region).height > 0
+    asyncio.run(check())
+
+
+def test_finished_failure_does_not_show_waiting_for_decisions():
+    async def check():
+        def handler(request):
+            return httpx.Response(500, text="backend failed")
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            app = RouterDemoApp(CONFIG, client)
+            async with app.run_test(size=(120, 42)) as pilot:
+                await pilot.press("r")
+                await app.workers.wait_for_complete()
+                summary = str(app.query_one("#comparison-summary", Static).content)
+                assert "기다리는 중" not in summary
+                assert "비교 불가" in summary
     asyncio.run(check())

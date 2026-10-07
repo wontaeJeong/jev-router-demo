@@ -12,8 +12,8 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Footer, Label, RichLog, Select, Static, TabbedContent, TabPane, Tabs, Tab, TextArea
 
 from jev_router_demo.config import Config
-from jev_router_demo.inspection import SECTIONS, abbreviate, export_result, render_section
-from jev_router_demo.labels import FIELDS, OUTPUT_KINDS, STATES, candidate_label, tier_label
+from jev_router_demo.inspection import SECTIONS, export_result, render_section
+from jev_router_demo.labels import FIELDS, OUTPUT_KINDS, STATES, candidate_label
 from jev_router_demo.scenarios import SCENARIOS, Scenario
 from jev_router_demo.session import DemoSession, safe_display
 from jev_router_demo.ui import cumulative_panel, number
@@ -58,19 +58,40 @@ class RequestPreview(VerticalScroll):
     can_focus = True
 
 
-def card_content(name, model, state, result):
+def selected_value(decision, field):
+    value = getattr(decision, field)
+    return str(value).lower() if isinstance(value, bool) else value
+
+
+def card_content(name, model, state, result, differences=()):
     color = "cyan" if name == "LLM" else "green"
     heading = Text(f"{name}  /  {model}\n", style=f"bold {color}")
     status = Text(STATES[state], style="yellow" if state == "running" else color)
     if not result:
         return Group(heading, status, Text("\n시나리오를 실행하면 실제 라우팅 결정을 확인할 수 있습니다.", style="dim"))
     decision = result.decision
-    route = Text("\n" + (tier_label(decision.model_tier) + " 모델" if decision else "경로 없음"), style=f"bold {color}")
-    flags = Text("\n")
+    choices = Table.grid(padding=(0, 2))
+    choices.add_column(style="dim")
+    choices.add_column()
     if decision:
-        flags.append("웹 검색 " + ("필요" if decision.needs_web else "불필요"), style="bold")
-        flags.append("   ·   ")
-        flags.append("사용자 승인 " + ("필요" if decision.needs_approval else "불필요"), style="bold yellow" if decision.needs_approval else "dim")
+        for index, (field, label) in enumerate(FIELDS.items(), 1):
+            value = candidate_label(field, selected_value(decision, field))
+            choices.add_row(f"{index:02}  {label}", Text(
+                value + ("  ≠" if field in differences else ""),
+                style="bold yellow" if field in differences else f"bold {color}"))
+    else:
+        choices.add_row("결정", "결과 없음")
+    items = [heading, status, Text(""), choices, Text(""), Text(
+        f"응답 시간  {number(result.latency_ms, ' ms')}\n출력 토큰  {number(result.output_tokens)}")]
+    if result.error:
+        items.append(Text("\n" + safe_display(result.error), style="bold red"))
+    return Group(*items)
+
+
+def execution_content(name, model, state, result):
+    heading = Text(f"{name} / {model} · {STATES[state]}", style="bold")
+    if not result:
+        return Group(heading, Text("실행 후 측정값이 표시됩니다.", style="dim"))
     table = Table.grid(padding=(0, 2), expand=True)
     table.add_column(style="dim")
     table.add_column(justify="right")
@@ -79,13 +100,42 @@ def card_content(name, model, state, result):
                          ("결정 출력 / 파싱", OUTPUT_KINDS.get(result.output_kind, result.output_kind) + " / " + ("실패" if result.parse_success is False else "성공" if result.parse_success else "불필요" if not result.parse_required else "측정값 없음")),
                          ("파싱 시간", number(result.parse_ms, " ms"))]:
         table.add_row(label, value)
-    items = [heading, status, route, flags, Text(""), table]
+    items = [heading, Text(""), table]
     if result.error:
         items.append(Text("\n" + safe_display(result.error), style="bold red"))
-    if result.probabilities:
-        items.append(Text("\nAPI가 반환한 후보 확률", style="bold"))
-        for field, candidates in result.probabilities.items():
-            items.append(Text(FIELDS.get(field, field) + ": " + ", ".join(f"{candidate_label(field, candidate)} {probability:.0%}" for candidate, probability in candidates.items())))
+    return Group(*items)
+
+
+def probability_content(name, model, state, result):
+    color = "cyan" if name == "LLM" else "green"
+    items = [Text(f"{name} / {model} · {STATES[state]}", style=f"bold {color}")]
+    if not result:
+        return Group(*items, Text("실행 후 선택과 후보 확률이 표시됩니다.", style="dim"))
+    for index, (field, label) in enumerate(FIELDS.items(), 1):
+        selected = selected_value(result.decision, field) if result.decision else None
+        items.append(Text(f"\n{index:02}  {label}", style="bold"))
+        if selected is not None:
+            items.append(Text("선택 → " + candidate_label(field, selected), style=f"bold {color}"))
+        else:
+            items.append(Text("결정 미제공", style="dim"))
+        candidates = (result.probabilities or {}).get(field, {})
+        if not candidates:
+            items.append(Text("후보 확률 미제공", style="dim"))
+            continue
+        table = Table.grid(padding=(0, 1))
+        for _ in range(4):
+            table.add_column()
+        for candidate, probability in candidates.items():
+            chosen = candidate == selected
+            filled = round(max(0, min(1, probability)) * 12)
+            bar = Text("█" * filled, style=color)
+            bar.append("░" * (12 - filled), style="dim")
+            table.add_row(Text("▶" if chosen else " ", style=f"bold {color}"),
+                          Text(candidate_label(field, candidate), style="bold" if chosen else "dim"),
+                          bar, Text(f"{probability:.1%}" + (" 선택" if chosen else "")))
+        items.append(table)
+    if result.error:
+        items.append(Text("\n" + safe_display(result.error), style="bold red"))
     return Group(*items)
 
 
@@ -93,7 +143,9 @@ class RouterDemoApp(App):
     CSS_PATH = "tui.tcss"
     TITLE = "JEV / 라우터 실험실"
     BINDINGS = [("r", "run_compare", "실행"), ("n", "next", "다음"), ("p", "previous", "이전"),
-                ("e", "edit", "수정"), ("o", "inspect", "HTTP 상세"), ("q", "quit", "종료")]
+                ("e", "edit", "수정"), ("c", "show_view('comparison')", "비교"),
+                ("d", "show_view('decisions')", "선택"), ("x", "show_view('execution')", "실행 상세"),
+                ("o", "inspect", "HTTP"), ("q", "quit", "종료")]
 
     def __init__(self, config: Config, client: httpx.AsyncClient | None = None):
         super().__init__()
@@ -124,6 +176,19 @@ class RouterDemoApp(App):
                         yield Static(id="card-LLM", classes="result-card llm")
                         yield Static(id="card-JEV", classes="result-card jev")
                     yield Static(id="comparison-summary")
+                    yield Static("선택·확률 [d]  ·  요청·측정 상세 [x]  ·  ≠ 다른 판단", classes="note")
+            with TabPane("선택 상세", id="decisions"):
+                yield Static("▶ 실제 선택  ·  막대는 API 반환 확률 그대로  ·  미제공 ≠ 0%", classes="note")
+                with VerticalScroll():
+                    with Horizontal(id="probability-cards"):
+                        yield Static(id="probability-LLM", classes="result-card llm")
+                        yield Static(id="probability-JEV", classes="result-card jev")
+            with TabPane("실행 상세", id="execution"):
+                with RequestPreview(id="request-original-scroll"):
+                    yield Static(id="request-original")
+                    with Horizontal(id="execution-cards"):
+                        yield Static(id="execution-LLM", classes="result-card llm")
+                        yield Static(id="execution-JEV", classes="result-card jev")
                     yield Static("모델·캐시·초기 로딩 차이의 영향을 받는 측정값입니다.\n'-'는 0이 아니라 측정값 없음을 뜻합니다. 예상 경로는 참고용 시나리오 정보입니다.", classes="note")
             with TabPane("HTTP 상세 보기", id="inspector"):
                 with Horizontal(classes="toolbar"):
@@ -143,35 +208,55 @@ class RouterDemoApp(App):
     def on_mount(self):
         self.set_class(self.size.width < 100, "compact")
         self.query_one("#cards").set_class(self.size.width < 100, "narrow")
+        for selector in ("#probability-cards", "#execution-cards"):
+            self.query_one(selector).set_class(self.size.width < 100, "narrow")
         self.refresh_request()
         self.refresh_results()
 
     def on_resize(self, event):
         if self.is_mounted and self.query("#cards"):
             self.query_one("#cards").set_class(event.size.width < 100, "narrow")
+            for selector in ("#probability-cards", "#execution-cards"):
+                self.query_one(selector).set_class(event.size.width < 100, "narrow")
             self.set_class(event.size.width < 100, "compact")
 
     def refresh_request(self):
-        preview, count = abbreviate(self.scenario.request)
         text = Text()
         text.append(self.scenario.label + "\n", style="bold")
         if self.scenario.summary:
-            text.append("요청 요약\n", style="bold cyan")
-            text.append(self.scenario.summary + "\n\n")
-        text.append("실제 전송 요청\n", style="bold")
-        text.append(safe_display(preview))
-        if count:
-            text.append("\n축약 표시 · 원본 변경 없음", style="dim")
+            text.append("요청 요약 · ", style="bold cyan")
+            text.append(self.scenario.summary)
+        else:
+            text.append(safe_display(" ".join(self.scenario.request.split())[:120]))
         self.query_one("#request-preview", Static).update(text)
+        original = Text("실제 전송 요청 · 전문\n", style="bold")
+        original.append(safe_display(self.scenario.request), style="")
+        self.query_one("#request-original", Static).update(original)
 
     def refresh_results(self):
+        decisions = [self.session.results[name].decision for name in self.session.routers
+                     if name in self.session.results and self.session.results[name].decision]
+        differences = [field for field in FIELDS if len(decisions) == 2
+                       and getattr(decisions[0], field) != getattr(decisions[1], field)]
         for name in self.session.routers:
-            self.query_one(f"#card-{name}", Static).update(card_content(name, self.session.models[name], self.session.states[name], self.session.results.get(name)))
+            args = (name, self.session.models[name], self.session.states[name], self.session.results.get(name))
+            self.query_one(f"#card-{name}", Static).update(card_content(*args, differences))
+            self.query_one(f"#probability-{name}", Static).update(probability_content(*args))
+            self.query_one(f"#execution-{name}", Static).update(execution_content(*args))
         comparison = self.session.snapshot()["comparison"]
         ratio = comparison["latency_ratio"]
         delta = comparison["output_token_difference"]
-        self.query_one("#comparison-summary", Static).update(Text(
-            f"측정값 비교   ·   응답 시간 LLM / Jev: {number(ratio)}배   ·   출력 토큰 LLM − Jev: {number(delta)}", style="bold"))
+        if len(decisions) == 2:
+            agreement = "다른 판단: " + " · ".join(FIELDS[field] for field in differences) if differences else "세 가지 판단 일치"
+        elif any(state == "running" for state in self.session.states.values()):
+            agreement = "두 모델의 결정을 기다리는 중"
+        elif any(state in ("error", "cancelled") for state in self.session.states.values()):
+            agreement = "비교 불가 · 일부 결정 미제공"
+        else:
+            agreement = "시나리오를 실행해 두 모델의 판단을 비교하세요."
+        summary = Text(agreement + "\n", style="bold yellow" if differences else "bold")
+        summary.append(f"응답 시간 LLM / Jev: {number(ratio)}배  ·  출력 토큰 차이: {number(delta)}", style="dim")
+        self.query_one("#comparison-summary", Static).update(summary)
         self.query_one("#metrics-table", Static).update(cumulative_panel(self.session.metrics))
         self.refresh_inspector()
 
@@ -263,8 +348,11 @@ class RouterDemoApp(App):
             self.query_one("#scenario", Select).value = self.index
 
     def action_inspect(self):
+        self.action_show_view("inspector")
+
+    def action_show_view(self, view):
         if not isinstance(self.screen, RequestEditor):
-            self.query_one("#views", TabbedContent).active = "inspector"
+            self.query_one("#views", TabbedContent).active = view
 
     def action_run_compare(self):
         if self.session.running or isinstance(self.screen, RequestEditor):
