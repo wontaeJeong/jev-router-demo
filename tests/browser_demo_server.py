@@ -23,6 +23,11 @@ async def handler(request):
     if "__http_error__" in user_request and request.url.host == "llm":
         return httpx.Response(404, json={"error": {"message": "Model missing", "detail": "오류 원본 " * 500}})
     payload = llm_response() if request.url.host == "llm" else typed_response()
+    if "__comparison_edges__" in user_request and request.url.host != "llm":
+        # Actual answers deliberately differ from probability argmax; one
+        # candidate is missing, and a selected boolean has a real 0% value.
+        payload["answers"]["model_tier"].update(choice="standard", probabilities={"fast": 0.8, "standard": 0.2})
+        payload["answers"]["needs_web"].update(choice="false", probabilities={"true": 1.0, "false": 0.0})
     payload["fixture_note"] = "SYNTHETIC BROWSER TEST · " * 100
     if request.url.host == "llm":
         payload["choices"][0]["message"]["reasoning_content"] = "Returned thinking fixture. " * 200
