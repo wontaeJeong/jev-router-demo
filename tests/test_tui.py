@@ -4,6 +4,7 @@ import httpx
 from rich.console import Console
 from textual.widgets import Select, Static, TextArea
 from textual.containers import VerticalScroll
+from textual.geometry import Region
 
 from jev_router_demo.tui import RouterDemoApp
 from jev_router_demo.models import RoutingDecision, RoutingResult
@@ -42,9 +43,45 @@ def test_navigation_editor_and_narrow_layout():
             await pilot.click("#save-request")
             assert app.scenario.request == "Custom request\nDo not execute r n p q"
             await pilot.resize_terminal(70, 30)
-            assert app.query_one("#cards").has_class("narrow")
+            assert app.query_one("#choices-LLM-model_tier").region.y == app.query_one("#choices-JEV-model_tier").region.y
+            await pilot.resize_terminal(50, 30)
+            assert app.query_one("#pair-model_tier").has_class("narrow")
             await pilot.press("e", "escape")
             assert app.scenario.label == "직접 입력"
+    asyncio.run(check())
+
+
+def test_primary_comparison_shows_all_candidates_probabilities_and_aligned_choices():
+    async def check():
+        app = RouterDemoApp(CONFIG)
+        async with app.run_test(size=(120, 42)) as pilot:
+            app.session.results["JEV"] = RoutingResult("JEV", decision=RoutingDecision(
+                model_tier="standard", needs_web=False, needs_approval=True),
+                probabilities={"model_tier": {"fast": 0.8, "standard": 0.2},
+                               "needs_web": {"false": 0.0}})
+            app.session.states = {"LLM": "running", "JEV": "success"}
+            app.refresh_results()
+            await pilot.pause()
+            console = Console(width=50, color_system=None)
+            with console.capture() as capture:
+                console.print(app.query_one("#choices-JEV-model_tier", Static).content)
+            lines = capture.get().splitlines()
+            assert any("●" in line and "일반 처리" in line and "20.0%" in line and "선택" in line for line in lines)
+            assert any("○" in line and "빠른 처리" in line and "80.0%" in line for line in lines)
+            assert any("심층 추론" in line and "미제공" in line for line in lines)
+            for width in (120, 70, 64):
+                await pilot.resize_terminal(width, 42)
+                for field in ("model_tier", "needs_web", "needs_approval"):
+                    left = app.query_one(f"#choices-LLM-{field}")
+                    right = app.query_one(f"#choices-JEV-{field}")
+                    assert left.region.y == right.region.y
+                    assert left.region.right <= right.region.x
+                    assert left.region.height == right.region.height
+                zero_choice = app.query_one("#choices-JEV-needs_web", Static)
+                rendered = "\n".join(strip.text for strip in zero_choice.render_lines(
+                    Region(0, 0, zero_choice.size.width, zero_choice.size.height)))
+                assert any("●" in line and "불필요" in line and "0.0%" in line and "선택" in line
+                           for line in rendered.splitlines())
     asyncio.run(check())
 
 

@@ -12,6 +12,7 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Footer, Label, RichLog, Select, Static, TabbedContent, TabPane, Tabs, Tab, TextArea
 
 from jev_router_demo.config import Config
+from jev_router_demo.comparison import selected_value
 from jev_router_demo.inspection import SECTIONS, export_result, render_section
 from jev_router_demo.labels import FIELDS, OUTPUT_KINDS, STATES, candidate_label
 from jev_router_demo.scenarios import SCENARIOS, Scenario
@@ -58,32 +59,38 @@ class RequestPreview(VerticalScroll):
     can_focus = True
 
 
-def selected_value(decision, field):
-    value = getattr(decision, field)
-    return str(value).lower() if isinstance(value, bool) else value
-
-
-def card_content(name, model, state, result, differences=()):
+def card_content(name, model, state):
     color = "cyan" if name == "LLM" else "green"
-    heading = Text(f"{name}  /  {model}\n", style=f"bold {color}")
-    status = Text(STATES[state], style="yellow" if state == "running" else color)
-    if not result:
-        return Group(heading, status, Text("\n시나리오를 실행하면 실제 라우팅 결정을 확인할 수 있습니다.", style="dim"))
-    decision = result.decision
-    choices = Table.grid(padding=(0, 2))
-    choices.add_column(style="dim")
-    choices.add_column()
-    if decision:
-        for index, (field, label) in enumerate(FIELDS.items(), 1):
-            value = candidate_label(field, selected_value(decision, field))
-            choices.add_row(f"{index:02}  {label}", Text(
-                value + ("  ≠" if field in differences else ""),
-                style="bold yellow" if field in differences else f"bold {color}"))
-    else:
-        choices.add_row("결정", "결과 없음")
-    items = [heading, status, Text(""), choices, Text(""), Text(
-        f"응답 시간  {number(result.latency_ms, ' ms')}\n출력 토큰  {number(result.output_tokens)}")]
-    if result.error:
+    heading = Text(f"{name}  ·  {STATES[state]}\n", style=f"bold {color}")
+    heading.append("텍스트 생성 라우터\n" if name == "LLM" else "구조화된 결정 라우터\n", style=color)
+    heading.append(model, style="dim")
+    heading.no_wrap = True
+    heading.overflow = "ellipsis"
+    return heading
+
+
+def candidate_content(name, candidates, stacked=False):
+    color = "cyan" if name == "LLM" else "green"
+    table = Table.grid(padding=(0, 1))
+    table.add_column(width=1)
+    table.add_column(min_width=9)
+    table.add_column(justify="right", min_width=6)
+    table.add_column(width=4)
+    for candidate in candidates:
+        chosen = candidate["selected"]
+        style = f"bold {color} on #1b3445" if chosen else "dim"
+        probability = candidate["probability"]
+        table.add_row(Text("●" if chosen else "○", style=style),
+                      Text(candidate["label"], style=style),
+                      Text(f"{probability:.1%}" if probability is not None else "미제공", style=style),
+                      Text("선택" if chosen else "", style=style))
+    return Group(Text(name, style=f"bold {color}"), table) if stacked else table
+
+
+def result_metrics(name, result):
+    items = [Text(name, style="bold cyan" if name == "LLM" else "bold green"), Text(
+        f"응답 시간  {number(result.latency_ms, ' ms') if result else '-'}\n출력 토큰  {number(result.output_tokens) if result else '-'}")]
+    if result and result.error:
         items.append(Text("\n" + safe_display(result.error), style="bold red"))
     return Group(*items)
 
@@ -171,12 +178,20 @@ class RouterDemoApp(App):
             yield Static(id="request-preview")
         with TabbedContent(id="views"):
             with TabPane("비교", id="comparison"):
-                with VerticalScroll():
-                    with Horizontal(id="cards"):
-                        yield Static(id="card-LLM", classes="result-card llm")
-                        yield Static(id="card-JEV", classes="result-card jev")
+                with Horizontal(id="cards"):
+                    yield Static(id="card-LLM", classes="router-heading llm")
+                    yield Static(id="card-JEV", classes="router-heading jev")
+                with VerticalScroll(id="comparison-scroll"):
+                    for field in FIELDS:
+                        yield Static(id=f"question-{field}", classes="question-heading")
+                        with Horizontal(id=f"pair-{field}", classes="decision-pair"):
+                            for name in ("LLM", "JEV"):
+                                yield Static(id=f"choices-{name}-{field}", classes=f"candidate-cell {name.lower()}")
+                    with Horizontal(id="key-metrics", classes="decision-pair"):
+                        yield Static(id="key-metrics-LLM", classes="candidate-cell llm")
+                        yield Static(id="key-metrics-JEV", classes="candidate-cell jev")
                     yield Static(id="comparison-summary")
-                    yield Static("선택·확률 [d]  ·  요청·측정 상세 [x]  ·  ≠ 다른 판단", classes="note")
+                    yield Static("● 실제 선택 · 미제공 ≠ 0% · 확률 막대 [d] · 실행 상세 [x]", classes="note")
             with TabPane("선택 상세", id="decisions"):
                 yield Static("▶ 실제 선택  ·  막대는 API 반환 확률 그대로  ·  미제공 ≠ 0%", classes="note")
                 with VerticalScroll():
@@ -206,19 +221,22 @@ class RouterDemoApp(App):
         yield Footer()
 
     def on_mount(self):
-        self.set_class(self.size.width < 100, "compact")
-        self.query_one("#cards").set_class(self.size.width < 100, "narrow")
-        for selector in ("#probability-cards", "#execution-cards"):
-            self.query_one(selector).set_class(self.size.width < 100, "narrow")
+        self.update_layout(self.size.width)
         self.refresh_request()
         self.refresh_results()
 
     def on_resize(self, event):
         if self.is_mounted and self.query("#cards"):
-            self.query_one("#cards").set_class(event.size.width < 100, "narrow")
-            for selector in ("#probability-cards", "#execution-cards"):
-                self.query_one(selector).set_class(event.size.width < 100, "narrow")
-            self.set_class(event.size.width < 100, "compact")
+            self.update_layout(event.size.width)
+            self.refresh_results()
+
+    def update_layout(self, width):
+        self.set_class(width < 100, "compact")
+        self.set_class(width < 64, "stacked")
+        for widget in self.query(".decision-pair"):
+            widget.set_class(width < 64, "narrow")
+        for selector in ("#probability-cards", "#execution-cards"):
+            self.query_one(selector).set_class(width < 100, "narrow")
 
     def refresh_request(self):
         text = Text()
@@ -234,16 +252,26 @@ class RouterDemoApp(App):
         self.query_one("#request-original", Static).update(original)
 
     def refresh_results(self):
+        snapshot = self.session.snapshot()
+        rows = snapshot["decision_rows"]
         decisions = [self.session.results[name].decision for name in self.session.routers
                      if name in self.session.results and self.session.results[name].decision]
-        differences = [field for field in FIELDS if len(decisions) == 2
-                       and getattr(decisions[0], field) != getattr(decisions[1], field)]
+        differences = [row["field"] for row in rows if row["different"]]
+        for index, row in enumerate(rows, 1):
+            field = row["field"]
+            self.query_one(f"#question-{field}", Static).update(Text(
+                f"{index:02}  {row['label']}" + ("  ≠ 다른 선택" if row["different"] else ""),
+                style="bold yellow" if row["different"] else "bold"))
+            for name, candidates in row["routers"].items():
+                self.query_one(f"#choices-{name}-{field}", Static).update(
+                    candidate_content(name, candidates, self.size.width < 64))
         for name in self.session.routers:
             args = (name, self.session.models[name], self.session.states[name], self.session.results.get(name))
-            self.query_one(f"#card-{name}", Static).update(card_content(*args, differences))
+            self.query_one(f"#card-{name}", Static).update(card_content(*args[:3]))
+            self.query_one(f"#key-metrics-{name}", Static).update(result_metrics(name, args[3]))
             self.query_one(f"#probability-{name}", Static).update(probability_content(*args))
             self.query_one(f"#execution-{name}", Static).update(execution_content(*args))
-        comparison = self.session.snapshot()["comparison"]
+        comparison = snapshot["comparison"]
         ratio = comparison["latency_ratio"]
         delta = comparison["output_token_difference"]
         if len(decisions) == 2:

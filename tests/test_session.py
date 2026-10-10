@@ -5,6 +5,7 @@ import httpx
 import pytest
 
 from jev_router_demo.session import DemoSession
+from jev_router_demo.models import RoutingDecision, RoutingResult
 from test_routers import CONFIG, jev_response, llm_response
 
 
@@ -34,6 +35,37 @@ def test_early_result_and_exactly_once_metrics():
             request_data = rest[-1]["snapshot"]["results"]["LLM"]["inspector"]["request"]
             assert "중략" in request_data["preview"]
             assert json.loads(request_data["full"])["messages"][1]["content"] == "x" * 2000
+    asyncio.run(check())
+
+
+def test_comparison_rows_preserve_candidate_order_actual_selection_and_missing_probabilities():
+    async def check():
+        async with httpx.AsyncClient() as client:
+            session = DemoSession(CONFIG, client)
+            session.results = {
+                "LLM": RoutingResult("LLM", decision=RoutingDecision(
+                    model_tier="fast", needs_web=False, needs_approval=False)),
+                "JEV": RoutingResult("JEV", decision=RoutingDecision(
+                    model_tier="standard", needs_web=True, needs_approval=False),
+                    probabilities={"model_tier": {"standard": 0.2, "fast": 0.8},
+                                   "needs_web": {"false": 0.0, "true": 1.0}}),
+            }
+            rows = session.snapshot()["decision_rows"]
+            assert [row["field"] for row in rows] == ["model_tier", "needs_web", "needs_approval"]
+            assert [row["different"] for row in rows] == [True, True, False]
+            for name in ("LLM", "JEV"):
+                assert [entry["value"] for entry in rows[0]["routers"][name]] == ["fast", "standard", "reasoning"]
+            assert rows[0]["routers"]["LLM"][0]["selected"] is True
+            assert rows[0]["routers"]["LLM"][0]["probability"] is None
+            assert rows[0]["routers"]["JEV"][0]["selected"] is False
+            assert rows[0]["routers"]["JEV"][1]["selected"] is True
+            assert rows[0]["routers"]["JEV"][1]["probability"] == 0.2
+            assert rows[0]["routers"]["JEV"][2]["probability"] is None
+            assert rows[1]["routers"]["JEV"][1]["probability"] == 0.0
+            session.results.clear()
+            cleared = session.snapshot()["decision_rows"]
+            assert not any(entry["selected"] for row in cleared for entries in row["routers"].values() for entry in entries)
+            assert not any(row["different"] for row in cleared)
     asyncio.run(check())
 
 

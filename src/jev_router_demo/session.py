@@ -6,6 +6,7 @@ from dataclasses import asdict, fields
 import httpx
 
 from jev_router_demo.config import Config
+from jev_router_demo.comparison import decision_rows
 from jev_router_demo.inspection import inspector_data
 from jev_router_demo.metrics import RouterMetrics
 from jev_router_demo.routers.litellm import LiteLLMRouter
@@ -58,7 +59,8 @@ class DemoSession:
             if llm.output_tokens is not None and jev.output_tokens is not None:
                 comparison["output_token_difference"] = llm.output_tokens - jev.output_tokens
         return safe_display({"run_id": self.run_id, "running": self.running, "scenario_id": self.scenario_id, "api_modes": self.api_modes,
-                             "states": dict(self.states), "results": results, "metrics": metrics, "comparison": comparison})
+                             "states": dict(self.states), "results": results, "metrics": metrics, "comparison": comparison,
+                             "decision_rows": decision_rows(self.results)})
 
     async def run(self, request: str, scenario_id: int | None = None):
         if self.running:

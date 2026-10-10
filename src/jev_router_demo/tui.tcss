@@ -1,10 +1,10 @@
 Screen { background: #0b1220; color: #d9e3f0; }
-#brand { height: 2; padding: 0 2; background: #142135; }
+#brand { height: 1; padding: 0 2; background: #142135; }
 #subtitle { height: 1; padding: 0 2; color: #8c9bb2; }
 .toolbar { height: 3; margin: 1 2 0 2; }
 #scenario { width: 1fr; margin-right: 1; }
 .toolbar Button { margin-left: 1; min-width: 12; }
-#request-preview-scroll { height: 4; margin: 1 2; padding: 0 1; border-left: thick #536881; }
+#request-preview-scroll { height: 3; margin: 0 2; padding: 0 1; border-left: thick #536881; }
 #request-preview-scroll:focus { border-left: thick #60b9f0; }
 #request-preview { height: auto; }
 #views { height: 1fr; margin: 0 1; }
@@ -13,8 +13,17 @@ TabPane { padding: 1; }
 .result-card { width: 1fr; height: auto; padding: 1 2; margin: 0 1 1 0; background: #142135; }
 .llm { border-top: thick #60b9f0; }
 .jev { border-top: thick #6fdaa8; }
-#cards.narrow, #probability-cards.narrow, #execution-cards.narrow { layout: vertical; }
+#probability-cards.narrow, #execution-cards.narrow, .decision-pair.narrow { layout: vertical; }
 .narrow .result-card { width: 100%; padding: 1; }
+.router-heading { width: 1fr; height: 4; padding: 0 1; background: #142135; margin-right: 1; }
+.decision-pair { height: auto; }
+.candidate-cell { width: 1fr; height: auto; padding: 0 1; background: #142135; margin-right: 1; border-top: none; }
+.decision-pair.narrow .candidate-cell { width: 100%; }
+.question-heading { height: 1; margin-top: 1; }
+#key-metrics { margin-top: 1; }
+#comparison-scroll { height: 1fr; }
+.stacked .router-heading { height: 3; }
+.stacked #subtitle { display: none; }
 #request-original-scroll { height: 1fr; }
 #request-original { height: auto; padding: 0 1 1 1; }
 #comparison-summary { height: auto; padding: 1; background: #1b2a3e; }
