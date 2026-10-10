@@ -11,16 +11,25 @@
 <body>
   <aside class="sidebar">
     <a class="brand" href="/" aria-label="라우터 실험실 홈"><span class="logo">j/</span><span>라우터 실험실<small>텍스트 생성 대신 결정.</small></span></a>
-    <div class="section-label">테스트 시나리오 <span>06</span></div>
-    <nav id="scenarios" aria-label="시나리오"></nav>
-    <button id="custom" class="custom-button">＋ 직접 입력 <kbd>E</kbd></button>
+    <button id="scenario-toggle" aria-controls="scenario-browser" aria-expanded="false">시나리오 목록 펼치기</button>
+    <div id="scenario-browser" class="scenario-browser">
+      <div class="section-label">시나리오 <span id="scenario-count" role="status">불러오는 중</span></div>
+      <label for="scenario-category" class="filter-label">분류</label>
+      <select id="scenario-category" aria-label="시나리오 분류"><option value="recommended">추천 데모</option></select>
+      <label for="scenario-search" class="filter-label">제목·요약 검색</label>
+      <input id="scenario-search" type="search" placeholder="예: 고객, 요금, 운영 DB" autocomplete="off">
+      <p id="scenario-selection-note" class="selection-note" hidden></p>
+      <nav id="scenarios" aria-label="시나리오 목록"></nav>
+      <p id="scenario-empty" class="selection-note" hidden>검색 결과가 없습니다. 검색어를 지우거나 다른 분류를 선택하세요.</p>
+      <button id="custom" class="custom-button">＋ 직접 입력 <kbd>E</kbd></button>
+    </div>
     <div class="sidebar-bottom"><span class="live-dot"></span> 로컬 작업 공간<p>하나의 요청, 두 백엔드.<br>실제 응답을 실시간으로 측정합니다.</p></div>
   </aside>
   <main>
     <header class="topbar"><span>실험 / 에이전트 라우팅</span><div><span id="connection" class="connection">연결 중…</span><button id="reconnect" hidden>다시 연결</button></div></header>
     <section class="page-heading"><div><div class="eyebrow">요청을 판단하는 계층</div><h1>같은 요청. <span>다른 경로.</span></h1><p>라우팅 결정과 실제 측정 비용을 나란히 비교합니다.</p></div><span class="simulation">라우팅 전용 시뮬레이션</span></section>
     <section class="request-panel">
-      <div class="panel-heading"><div><span class="section-label">입력 요청</span><h2 id="scenario-title">시나리오 불러오는 중…</h2></div><div class="actions"><button id="edit">요청 수정 <kbd>E</kbd></button><button id="run" class="primary" disabled>▶ 비교 실행 <kbd>R</kbd></button></div></div>
+      <div class="panel-heading"><div><span class="section-label">입력 요청</span><h2 id="scenario-title">시나리오 불러오는 중…</h2><p id="scenario-context" class="muted"></p></div><div class="actions"><button id="edit">요청 수정 <kbd>E</kbd></button><button id="run" class="primary" disabled>▶ 비교 실행 <kbd>R</kbd></button></div></div>
       <div id="request-summary" class="request-summary" hidden><span class="section-label">요청 요약</span><p id="summary-text"></p></div>
       <details class="request-details"><summary>실제 전송 요청 · 전문 보기</summary>
         <p id="request-preview" class="request-text" tabindex="0"></p>

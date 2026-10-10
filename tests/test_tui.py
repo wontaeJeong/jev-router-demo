@@ -2,7 +2,7 @@ import asyncio
 
 import httpx
 from rich.console import Console
-from textual.widgets import Select, Static, TextArea
+from textual.widgets import Input, OptionList, Select, Static, TextArea
 from textual.containers import VerticalScroll
 from textual.geometry import Region
 
@@ -28,6 +28,65 @@ def test_summary_is_displayed_but_cleared_when_request_is_edited():
             assert "요청 요약" not in str(preview.content)
             assert "A different request" in str(preview.content)
             assert app.scenario.summary is None
+    asyncio.run(check())
+
+
+def test_picker_custom_cancel_preserves_selection_and_small_terminal_can_search():
+    async def check():
+        app = RouterDemoApp(CONFIG)
+        async with app.run_test(size=(50, 24)) as pilot:
+            await pilot.press("s")
+            options = app.screen.query_one("#scenario-list", OptionList)
+            assert options.region.height >= 3
+            app.screen.query_one("#scenario-category", Select).value = "operations"
+            await pilot.pause()
+            await pilot.click("#pick-custom")
+            assert app.screen.query("#request-editor")
+            await pilot.press("escape")
+            assert app.index == 0 and app.scenario_category == "recommended"
+            assert app.query_one("#scenario", Select).value == 0
+    asyncio.run(check())
+
+
+def test_picker_filter_search_cancel_and_filtered_navigation():
+    async def check():
+        app = RouterDemoApp(CONFIG)
+        async with app.run_test(size=(100, 40)) as pilot:
+            await pilot.press("s")
+            assert app.screen.query_one("#scenario-list", OptionList).option_count == 6
+            app.screen.query_one("#scenario-category", Select).value = "all"
+            await pilot.pause()
+            await pilot.press("enter")
+            assert app.index == 0
+            assert "전체 시나리오" in str(app.query_one("#request-preview", Static).content)
+            await pilot.press("s")
+            app.screen.query_one("#scenario-search", Input).value = "고객"
+            await pilot.pause()
+            assert app.screen.query_one("#scenario-list", OptionList).option_count == 1
+            await pilot.press("enter")
+            assert app.index == 7 and app.scenario.label == "고객 안내 메일 초안"
+            assert "자" in str(app.query_one("#request-preview", Static).content)
+            await pilot.press("n")
+            assert app.index == 7
+            await pilot.press("s")
+            app.screen.query_one("#scenario-category", Select).value = "operations"
+            app.screen.query_one("#scenario-search", Input).value = ""
+            await pilot.pause()
+            assert app.screen.query_one("#scenario-list", OptionList).option_count == 2
+            await pilot.press("enter")
+            assert app.index == 4
+            await pilot.press("n")
+            assert app.index == 15
+            await pilot.press("n")
+            assert app.index == 4
+            await pilot.press("s")
+            app.screen.query_one("#scenario-search", Input).value = "notfound"
+            await pilot.pause()
+            assert app.screen.query_one("#scenario-list", OptionList).option_count == 0
+            await pilot.press("enter")
+            assert app.screen.query("#scenario-search")
+            await pilot.press("escape")
+            assert app.index == 4 and app.scenario_category == "operations"
     asyncio.run(check())
 
 

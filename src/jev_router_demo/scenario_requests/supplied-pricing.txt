@@ -1,0 +1,20 @@
+CALCULATION REQUEST
+Calculate a monthly cost estimate using only the fictional rate cards and workload assumptions in this document. These prices are invented for a spreadsheet exercise and do not describe current commercial products. The point is to compare two supplied options consistently, not to find today's market prices or recommend a purchase. All facts necessary for the requested arithmetic are included below.
+
+FICTIONAL RATE CARD A
+Provider Amber charges 0.40 units per million ordinary input tokens and 1.20 units per million output tokens. Cached input is charged at 0.10 units per million tokens. There is no separate cache-writing charge in this fictional rate card. The exercise specifies that the repeated input volume described below is eligible for that cached-input rate. There is no fixed monthly fee, tax, minimum commitment, batch discount, or other charge in the exercise.
+
+FICTIONAL RATE CARD B
+Provider Birch charges 0.25 units per million ordinary input tokens and 1.50 units per million output tokens. It has no cached-input price in this exercise, so all of its input volume uses the ordinary input rate. Birch also has no fixed fee or other charge. Both providers use the same abstract monetary unit. Do not convert the result to a real currency or introduce exchange-rate assumptions.
+
+SUPPLIED MONTHLY VOLUME
+The baseline workload contains twenty million ordinary input tokens and four million output tokens. The repeated-prefix case contains twelve million ordinary input tokens, eight million cached input tokens for Amber, and the same four million output tokens. For Birch, those twelve plus eight million input tokens are all charged as ordinary input. The total input volume stays at twenty million in both cases; cached volume is not an additional workload to add on top.
+
+COMPARISON INSTRUCTIONS
+Calculate the baseline cost for each provider and the repeated-prefix cost for each provider. Show input and output subtotals separately. Then show the difference between the two providers in each case and explain which option is cheaper under these specific assumptions. Do not generalize the result to unknown volumes or infer that one provider is a better product because of this arithmetic exercise.
+
+COMMON PITFALLS TO AVOID
+The rate unit is one million tokens, not one thousand tokens or one request. The output volume does not change in the repeated-prefix case. Amber's cached rate applies only to the eight million specified cached tokens. Birch's input does not become free merely because it lacks a separate cached rate. A missing real-world tax assumption is not an invitation to add a guessed percentage to this fictional example.
+
+FINAL REQUEST
+Return a clear table and the formulas used for this estimate. Use the supplied fictional rate cards exactly, and explain the two-case comparison in a few sentences. Do not browse for real provider prices, update the input assumptions, make a financial commitment, create an account, or edit a spreadsheet file. The only requested work is calculating and explaining the results from the information in this document.

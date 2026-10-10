@@ -1,0 +1,17 @@
+UPGRADE PLANNING CONTEXT
+We currently run vLLM on H100 GPUs and are considering upgrading the host environment to CUDA 13. The purpose of this request is to establish current official compatibility before we schedule an upgrade. Our inventory describes our own environment, but it does not answer whether the latest stable vLLM release supports the target configuration. Please verify that part from current authoritative sources rather than relying on an old compatibility assumption.
+
+SUPPLIED ENVIRONMENT
+The serving workload uses an NVIDIA GPU node, a Linux x86_64 host, a container runtime, and a Python environment inside the serving image. Operations maintains the host driver separately from the application image. The team can replace an image during a later maintenance window, but this request does not authorize that replacement. Our checkpoint format and model-serving protocol must remain compatible with the applications that call the service.
+
+OPEN QUESTIONS
+Several people have used the phrase "CUDA version" to mean different things: the installed host toolkit, the capability reported by a driver utility, or the CUDA runtime bundled with a Python wheel or container. We need those distinctions stated explicitly. A recommendation that says only "the GPU supports it" will not tell us whether a prebuilt vLLM package, its dependency versions, and the host driver form a supported combination.
+
+EVIDENCE TO FIND
+Check the latest stable vLLM installation documentation and release information, along with relevant official dependency or driver compatibility documentation. Identify which source applies to a released build and which describes a development build. If CUDA 13 is not supported by the stable prebuilt artifact, explain whether there is a documented alternative or whether the proposal should wait. Do not treat an unofficial discussion as an official support commitment.
+
+DECISION CRITERIA
+We care about an officially documented installation path, a clear driver requirement, and a reproducible image selection. We are not requesting benchmark numbers or a claim that a toolkit upgrade will automatically improve inference speed. Where the documentation leaves an ambiguity, report it rather than inventing a version constraint. Record the source URL and the date on which you checked it so the upgrade review can distinguish a current result from a historical note.
+
+OUTPUT AND FINAL REQUEST
+Check whether the latest stable vLLM release officially supports CUDA 13 for this H100 environment. Summarize the relevant installation and dependency constraints, distinguish host driver requirements from bundled runtime requirements, and explain whether an application image change would likely be necessary. Provide current source references and note unresolved compatibility questions. This is an investigation only: do not upgrade the host, install packages, download a model, edit manifests, restart the service, or perform a deployment.

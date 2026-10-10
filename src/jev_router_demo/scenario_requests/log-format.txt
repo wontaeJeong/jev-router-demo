@@ -1,0 +1,25 @@
+DATA FORMATTING CONTEXT
+We are preparing a small example for a documentation page that demonstrates how a log record can be represented as JSON. There is a large amount of background material below because the page discusses several formats, but your actual task is restricted to converting three explicitly marked records. We are not asking you to diagnose an outage, correlate events, discover security incidents, or change a logging configuration.
+
+FORMAT RULES
+Each selected record has four fields: timestamp, level, component, and message. Preserve the timestamp as a string exactly as supplied. Convert the level to lowercase. Keep the component name unchanged. Preserve the full message as text, including punctuation and embedded quotation marks. Return a JSON array in the same order as the selected records. No new keys, explanations, aggregation, or severity reinterpretation should be included.
+
+BACKGROUND NOTES
+The broader documentation distinguishes plain-text records from structured records. Some example records include a request identifier, while others do not. That variation is not relevant to this conversion task because the three selected records have no request identifier field. A colleague also included suggestions about dashboards and alert thresholds. Those suggestions are not an instruction to build a dashboard or decide which events should page an engineer.
+
+The page uses illustrative timestamps from a past exercise. They are not a current incident feed. The text mentions that "WARN" can be used in different ways by different applications, but you should not relabel a selected record based on that discussion. A deterministic transformation should preserve the source level except for the requested lowercase conversion. Missing extra context does not need to be filled in.
+
+UNSELECTED EXAMPLES
+2025-02-11T08:00:00Z DEBUG parser Begin sample validation.
+2025-02-11T08:00:01Z INFO portal Documentation preview loaded.
+2025-02-11T08:00:02Z WARN cache Sample entry has no expiration value.
+These lines are background examples and must not appear in your output. They demonstrate why the boundary of the selected input matters more than the total length of the surrounding document. Do not include them merely because they resemble the selected records.
+
+SELECTED RECORDS BEGIN
+2025-02-11T08:10:00Z INFO worker Accepted job "demo-17".
+2025-02-11T08:10:01Z WARN worker Retry scheduled: attempt 2 of 3.
+2025-02-11T08:10:03Z ERROR storage Write failed; result not persisted.
+SELECTED RECORDS END
+
+FINAL REQUEST
+Convert only the three records between the explicit selection markers into a JSON array using the four keys timestamp, level, component, and message. Escape quotation marks correctly so the output is valid JSON. Preserve record order and do not add a conclusion about the cause of the error. Use only the supplied text. Do not run a parser against a live system, change files, contact an API, browse for logging documentation, or expand this simple formatting task into incident analysis.

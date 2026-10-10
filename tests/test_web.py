@@ -1,4 +1,5 @@
 import asyncio
+import json
 
 import httpx
 from fastapi.testclient import TestClient
@@ -10,19 +11,25 @@ from test_routers import CONFIG, jev_response, llm_response
 def test_scenario_summary_is_metadata_not_backend_input():
     requests = []
     def handler(request):
-        requests.append(request.content.decode())
+        requests.append(json.loads(request.content))
         return httpx.Response(200, json=llm_response() if request.url.host == "llm" else jev_response())
     client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
     with TestClient(create_app(CONFIG, client)) as browser, browser.websocket_connect("/ws") as socket:
-        scenarios = socket.receive_json()["scenarios"]
+        initial = socket.receive_json()
+        scenarios = initial["scenarios"]
+        assert len(scenarios) == 16
+        assert "recommended" in initial["scenario_filters"]
+        assert sum(item["recommended"] for item in scenarios) == 6
+        assert all(item["request_chars"] == len(item["request"]) for item in scenarios)
         assert all(item.get("summary") for item in scenarios)
         scenario = scenarios[0]
         socket.send_json({"type": "run", "request": scenario["request"], "scenario_id": 0})
         while socket.receive_json()["type"] != "finished":
             pass
         assert len(requests) == 2
-        assert all(scenario["request"] in body for body in requests)
-        assert all(scenario["summary"] not in body for body in requests)
+        transmitted = [body["state"] if "state" in body else body["messages"][1]["content"] for body in requests]
+        assert all(scenario["request"] == text for text in transmitted)
+        assert all(scenario["summary"] not in text for text in transmitted)
 
 
 def test_web_assets_run_and_isolated_sessions():

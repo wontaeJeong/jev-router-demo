@@ -1,0 +1,20 @@
+READ-ONLY REVIEW REQUEST
+Review a proposed cleanup of an old production database table using the supplied schema and dependency notes. The notes mention production deletion because that is the plan being evaluated, not because this request authorizes deletion. Do not connect to any database, execute SQL, alter a schema, create a migration, or remove an index. We want a risk assessment and a checklist for a later human decision.
+
+SUPPLIED SCHEMA NOTES
+The old table is public.legacy_users. The current application reads public.users_v2 after a completed data-copy migration. Two indexes belong directly to the old table: legacy_users_email_idx and legacy_users_created_at_idx. An old event table has an index named legacy_user_events_user_id_idx. The name suggests a relationship to the retired user path, but the supplied notes do not establish every query that uses that event table.
+
+APPLICATION AND REPORTING DEPENDENCIES
+The main application read path no longer queries legacy_users. A monthly export script still contains a configurable table name, and the current production value of that setting is not included. An internal reporting notebook contains an example query against the old table, but nobody has established whether that notebook is still used. A support procedure refers to historical user identifiers without documenting which table supplies them.
+
+MIGRATION EVIDENCE
+The staging rehearsal removed the old table and ran the main application smoke checks successfully. It did not run the monthly export because that process normally runs on a schedule. A backup was recorded before the rehearsal, but the notes do not show a production restore test or a recovery-time estimate. Successful staging application checks are useful evidence, but they are not proof that every production consumer has been retired.
+
+WHAT TO ASSESS
+Separate confirmed facts from unknown dependencies. Explain how to verify the export setting, ownership of reporting queries, foreign keys or views, and the use of the event-table index. Include data-retention obligations and recovery expectations as questions to resolve rather than assuming a legal or operational answer from a table name. Consider how a deletion window and communication plan would depend on those findings.
+
+OUTPUT BOUNDARIES
+Do not generate a runnable destructive script and do not treat this review as permission to execute a suggested command. A future decision-maker may use the checklist to request additional evidence, postpone the cleanup, or narrow the change. Your job is to describe the conditions that would make the proposed plan defensible, and to identify reasons it might be premature under the supplied information.
+
+FINAL REQUEST
+Produce an evidence table, a list of unresolved dependencies, and an ordered pre-deletion review checklist for this production cleanup plan. Compare the strength of the staging evidence with the gaps in production coverage. Use only the supplied notes and general database reasoning. Do not browse for current releases, log in to infrastructure, run queries, create a migration, change data, or execute any deletion. This is explicitly analysis of a possible change, not the change itself.

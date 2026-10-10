@@ -52,6 +52,13 @@ async def capture():
             await pilot.press("o")
             await pilot.pause()
             app.save_screenshot("tui-inspector.svg", path=str(directory))
+            await pilot.resize_terminal(120, 42)
+            await pilot.press("s")
+            await pilot.pause()
+            app.save_screenshot("tui-scenario-picker.svg", path=str(directory))
+            await pilot.resize_terminal(50, 24)
+            await pilot.pause()
+            app.save_screenshot("tui-scenario-picker-small.svg", path=str(directory))
     print("Synthetic TUI screenshots saved in exports/")
 
 

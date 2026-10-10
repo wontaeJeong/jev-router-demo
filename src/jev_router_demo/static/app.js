@@ -1,6 +1,7 @@
 "use strict";
 const $ = (id) => document.getElementById(id);
 let socket, scenarios = [], models = {}, snapshot = null, selected = 0, request = "", router = "LLM", section = "request", full = false, pending = false;
+let scenarioFilters = {}, scenarioCategory = "recommended", scenarioQuery = "";
 const fmt = (value, digits = 0) => value == null ? "—" : Number(value).toLocaleString(undefined, { maximumFractionDigits: digits });
 const node = (tag, className, text) => { const el = document.createElement(tag); el.className = className; if (text != null) el.textContent = text; return el; };
 const tiers = {fast: "빠른 처리", standard: "일반 처리", reasoning: "심층 추론"};
@@ -13,6 +14,7 @@ function controls() {
   const locked = busy(), online = socket?.readyState === WebSocket.OPEN;
   $("run").disabled = locked || !online;
   $("edit").disabled = $("custom").disabled = locked || !online;
+  $("scenario-search").disabled = $("scenario-category").disabled = locked;
   document.querySelectorAll(".scenario-button").forEach((button) => button.disabled = locked);
   $("run").firstChild.textContent = locked ? "● 라우팅 중… " : "▶ 비교 실행 ";
 }
@@ -20,6 +22,10 @@ function chooseScenario(index) {
   if (busy()) return;
   selected = index; request = scenarios[index].request;
   clearCurrentResults(); renderRequest(); renderCards(); renderInspector();
+  if (mobileScenarios.matches) {
+    setScenarioBrowser(false);
+    $("run").focus();
+  }
 }
 function clearCurrentResults() {
   if (snapshot) {
@@ -35,12 +41,49 @@ function clearCurrentResults() {
 }
 function renderRequest() {
   $("scenario-title").textContent = selected == null ? "직접 입력 요청" : scenarios[selected]?.label || "요청";
+  const chars = selected == null ? Array.from(request).length : scenarios[selected]?.request_chars;
+  $("scenario-context").textContent = `${selected == null ? "직접 입력" : scenarioFilters[scenarios[selected]?.category] || ""} · 본문 ${fmt(chars)}자`;
   $("request-preview").textContent = request;
-  document.querySelectorAll(".scenario-button").forEach((button, index) => { button.classList.toggle("selected", index === selected); button.setAttribute("aria-pressed", String(index === selected)); });
+  document.querySelectorAll(".scenario-button").forEach(button => {
+    const active = Number(button.dataset.scenarioId) === selected;
+    button.classList.toggle("selected", active); button.setAttribute("aria-pressed", String(active));
+  });
   const s = scenarios[selected];
   $("request-summary").hidden = false;
   $("summary-text").textContent = s?.summary || request.trim().replace(/\s+/g, " ").slice(0, 120);
   $("expected").textContent = s ? `참고용 예상 경로 · ${s.expected_tiers.map(tierLabel).join(" / ")} · 웹 검색 ${s.expected_web ? "필요" : "불필요"} · 승인 ${s.expected_approval ? "필요" : "불필요"}` : "직접 입력 · 예상 경로 없음";
+  updateScenarioSelectionNote();
+}
+function visibleScenarioIndices() {
+  const query = scenarioQuery.trim().toLocaleLowerCase();
+  return scenarios.map((_, index) => index).filter(index => {
+    const item = scenarios[index];
+    return (scenarioCategory === "all" || scenarioCategory === "recommended" && item.recommended || item.category === scenarioCategory)
+      && `${item.label} ${item.summary || ""}`.toLocaleLowerCase().includes(query);
+  });
+}
+function updateScenarioSelectionNote() {
+  const outside = selected != null && !visibleScenarioIndices().includes(selected);
+  $("scenario-selection-note").hidden = !outside;
+  $("scenario-selection-note").textContent = outside ? `현재 선택: ${scenarios[selected].label} (목록 밖)` : "";
+}
+function renderScenarios() {
+  const indices = visibleScenarioIndices(), list = $("scenarios");
+  list.replaceChildren();
+  for (const index of indices) {
+    const item = scenarios[index], button = node("button", "scenario-button"), label = node("span", "", item.label);
+    label.append(node("small", "", `${scenarioFilters[item.category]} · ${fmt(item.request_chars)}자`));
+    button.append(node("span", "ordinal", String(index + 1).padStart(2, "0")), label);
+    button.classList.toggle("selected", index === selected);
+    button.setAttribute("aria-pressed", String(index === selected));
+    button.dataset.scenarioId = index;
+    button.disabled = busy();
+    button.onclick = () => chooseScenario(index);
+    list.append(button);
+  }
+  $("scenario-count").textContent = `${indices.length} / ${scenarios.length}`;
+  $("scenario-empty").hidden = indices.length !== 0;
+  updateScenarioSelectionNote();
 }
 function renderCards() {
   for (const name of ["LLM", "JEV"]) {
@@ -136,12 +179,15 @@ function connect() {
     if (current !== socket) return;
     const event = JSON.parse(message.data);
     if (event.type === "init") {
-      models = event.models; scenarios = event.scenarios; snapshot = event.snapshot;
+      models = event.models; scenarios = event.scenarios; snapshot = event.snapshot; scenarioFilters = event.scenario_filters;
       $("backend-note").textContent = `Jev는 ${snapshot.api_modes.JEV} 구조화 API를 사용합니다. 출력 토큰은 실제 반환값을 표시합니다.`;
-      $("scenarios").replaceChildren();
-      scenarios.forEach((scenario, index) => { const button = node("button", "scenario-button"); const label = node("span", "", scenario.label); label.append(node("small", "", scenario.expected_tiers.map(tierLabel).join(" / ") + (scenario.expected_web ? " · 웹 검색" : "") + (scenario.expected_approval ? " · 승인" : ""))); button.append(node("span", "ordinal", String(index + 1).padStart(2,"0")), label); button.onclick = () => chooseScenario(index); $("scenarios").append(button); });
+      $("scenario-category").replaceChildren();
+      for (const [key, label] of Object.entries(scenarioFilters)) {
+        const option = node("option", "", label); option.value = key; $("scenario-category").append(option);
+      }
+      $("scenario-category").value = scenarioCategory;
       $("connection").textContent = "● 연결됨 · 로컬 세션"; $("connection").classList.remove("offline");
-      selected = 0; request = scenarios[0].request; renderRequest();
+      selected = 0; request = scenarios[0].request; renderScenarios(); renderRequest();
       $("run-state").textContent = "첫 비교를 실행할 준비가 되었습니다";
     } else if (event.type === "error") { toast(event.message); }
     else {
@@ -175,5 +221,16 @@ document.querySelectorAll("[data-section]").forEach(button => button.onclick = (
 $("copy").onclick = async () => { try { await navigator.clipboard.writeText(inspectorEntry().full); toast("축약하지 않은 원문을 복사했습니다."); } catch { toast("클립보드를 사용할 수 없습니다. 원문 저장을 이용하세요."); } };
 $("download").onclick = () => { const entry = inspectorEntry(); if (!entry) return; const blob = new Blob([entry.full], {type:entry.is_json ? "application/json;charset=utf-8" : "text/plain;charset=utf-8"}); const url = URL.createObjectURL(blob), link = node("a", ""); link.href = url; link.download = `${router.toLowerCase()}-${section}-run${snapshot.run_id}-${Date.now()}.${entry.is_json ? "json" : "txt"}`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); toast("원문을 저장했습니다."); };
 $("reconnect").onclick = connect;
+$("scenario-category").onchange = () => { scenarioCategory = $("scenario-category").value; renderScenarios(); };
+$("scenario-search").oninput = () => { scenarioQuery = $("scenario-search").value; renderScenarios(); };
+const mobileScenarios = matchMedia("(max-width:800px)");
+function setScenarioBrowser(open) {
+  $("scenario-browser").hidden = !open;
+  $("scenario-toggle").setAttribute("aria-expanded", String(open));
+  $("scenario-toggle").textContent = open ? "시나리오 목록 접기" : "시나리오 목록 펼치기";
+}
+$("scenario-toggle").onclick = () => setScenarioBrowser($("scenario-browser").hidden);
+mobileScenarios.addEventListener("change", () => setScenarioBrowser(!mobileScenarios.matches));
+setScenarioBrowser(!mobileScenarios.matches);
 document.addEventListener("keydown", event => { if (event.ctrlKey || event.metaKey || event.altKey || $("request-dialog").open || /^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName)) return; if (event.key.toLowerCase() === "r") $("run").click(); if (event.key.toLowerCase() === "e") editRequest(); });
 connect();

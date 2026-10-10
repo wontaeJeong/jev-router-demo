@@ -42,10 +42,9 @@ def test_route_is_simulation_with_no_approval():
 
 
 def test_all_scenarios_and_request_preview():
-    assert len(SCENARIOS) == 6
     stream = StringIO()
     render_screen(Console(file=stream, width=60, color_system=None), SCENARIOS[5], 5, None, {"LLM": RouterMetrics(), "JEV": RouterMetrics()})
-    assert "시나리오 6/6" in stream.getvalue()
+    assert "시나리오 6/16" in stream.getvalue()
     assert "…" in stream.getvalue()
     assert "[v]" in stream.getvalue()
 

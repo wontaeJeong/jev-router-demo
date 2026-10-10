@@ -1,0 +1,28 @@
+TRANSLATION REQUEST
+Translate the supplied operations guide into Korean. The English guide is the complete source for this task. Preserve its headings, checklist structure, code snippets, and identifiers. Do not research a newer version, evaluate the policy, modify an operational system, or add recommendations that are absent from the text. The translated document will be reviewed before it is distributed.
+
+SOURCE DOCUMENT: REPORT ARCHIVE HANDOVER
+Purpose: This guide explains how a support representative should locate archived monthly reports and record a customer's request. It applies to document retrieval through the existing portal, not to editing data or changing the archive schedule. If the portal is unavailable, record the observation and contact the designated internal support channel. Do not create a second archive from an incomplete download.
+
+Before you begin: Confirm that the customer is asking for a report from the correct organization and reporting month. The portal's organization identifier is not the same as a display name. A display name may change after an account update, while organization_id remains the key used by the archive. Do not use a similar-looking name as a substitute for an exact identifier.
+
+Retrieval steps:
+1. Open the report archive section of the portal.
+2. Select the organization using its organization_id.
+3. Choose the requested reporting month.
+4. Check that the report status is "complete".
+5. Record the report identifier in the support case.
+6. Use the portal's existing document-sharing process for the next step.
+
+Example identifier record:
+organization_id = "org_example_42"
+report_id = "monthly_2025_11"
+status = "complete"
+These values are examples for the guide. Do not treat them as an actual customer account or a command to retrieve a live report. Keep identifiers and quoted status values unchanged when translating the explanation around them.
+
+If a report is missing: Check whether the requested month predates the organization's archive start date. If it does, explain that the portal does not contain a report for that period. If the month is within the archive range, record the selected organization_id, reporting month, and observed status for the support team. Do not mark a missing document as complete, manufacture a replacement report, or alter the archive job.
+
+Case notes: Include the customer's requested month, the report identifier if present, and whether the customer needs help opening the document. Use a neutral description of what was observed. The case note is not a determination of contract eligibility, a guarantee of recovery, or authorization to disclose information to a different organization.
+
+FINAL REQUEST
+Translate this complete source document into Korean, retaining the numbered checklist and code-like lines exactly where they occur. Keep organization_id, report_id, status, and the example identifier values in English. Translate the surrounding prose naturally while preserving its meaning. Provide the translation only; do not execute the retrieval steps, send a document, open the portal, modify a case, or browse for an external policy.

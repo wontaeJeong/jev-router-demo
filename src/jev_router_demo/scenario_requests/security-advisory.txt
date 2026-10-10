@@ -1,0 +1,20 @@
+SECURITY REVIEW REQUEST
+Review the dependency inventory below against current official security advisories. The inventory is a supplied example from an application review; it is not a statement that any particular version has a vulnerability. Your task is to establish which advisories, if any, actually apply, what conditions matter, and what the team should investigate first. Do not install patches, change package versions, modify a deployment, or attempt exploitation.
+
+SUPPLIED INVENTORY
+The Python service lists Django 4.2.10, Jinja2 3.1.3, and requests 2.31.0 in its recorded environment. A small Node.js documentation tool lists express 4.18.2. The service renders internal templates, receives authenticated HTTP requests, and makes outbound calls to allowlisted endpoints. The documentation tool is run during a build rather than being deliberately exposed as a public web server. The inventory may not describe every transitive dependency.
+
+APPLICATION CONTEXT
+The team's saved review notes predate some of its current operational documentation. A package being present does not by itself prove that a vulnerable feature is reachable. Conversely, an internal-only service should not automatically be treated as unaffected without considering its inputs and trust boundaries. We want to understand the version range and usage conditions of each relevant advisory before choosing a response.
+
+EVIDENCE REQUIREMENTS
+Consult current authoritative advisory records, official project security pages, or official release notes. Distinguish a confirmed affected version range from an unsupported inference. If a record has been revised or withdrawn, use its current status and explain the change when relevant. Provide identifiers and source links only for records you actually verified; do not generate plausible-looking CVE numbers from memory.
+
+TRIAGE OUTPUT
+For each package, state whether verified current evidence identifies an applicable advisory, whether application-specific reachability is established or unknown, and which supported version or remediation direction the authoritative source recommends. Keep direct dependencies and transitive exposure separate. Prioritize the next checks based on severity and the described usage, and identify any evidence that would change that priority.
+
+LIMITS OF THIS REQUEST
+We have not supplied repository source code, a lockfile, a container image, or a complete runtime configuration. Do not claim that the application is safe or compromised from this inventory alone. The team will collect missing artifacts and decide on changes after the review. Do not run network probes, log in to infrastructure, file tickets automatically, or send data to a vulnerability-scanning service.
+
+FINAL REQUEST
+Compare this inventory with the latest official security information, summarize verified version impacts and usage caveats, and produce an ordered investigation list with current source references and a verification date. This is an information-gathering and analysis request only. No package update, infrastructure change, production rollout, credential change, or destructive operation is authorized.

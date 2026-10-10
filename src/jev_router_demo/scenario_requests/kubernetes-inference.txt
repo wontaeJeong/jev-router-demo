@@ -1,0 +1,17 @@
+INVESTIGATION CONTEXT
+Our inference workload became significantly slower after moving to a new Kubernetes node. We need a multi-evidence diagnosis that distinguishes deployment differences from a known software regression. The attached measurements are illustrative internal observations, not published benchmark claims. Do not change the cluster, edit a deployment, restart pods, or alter resource limits; this request is analysis only.
+
+BEFORE AND AFTER SNAPSHOT
+The old node and the new node both report an H100-class GPU, but they were provisioned by different image pipelines. The old pod and the new pod use the same application model identifier. However, the image digest changed during the move, the host driver package differs, and a configuration file was regenerated from defaults. We have not yet established which runtime libraries are bundled inside each image. A repeated request batch shows higher time to first token and lower throughput on the new node.
+
+REQUEST AND LOAD DETAILS
+The comparison used the same stored prompts and a similar concurrency level, but the old-node measurements were taken after a warm-up period. Some new-node samples include the first request after pod startup. Request input lengths vary substantially, so a single average may conceal different prefill and decoding behavior. There is also a report that the new node runs an additional GPU workload during part of the observation window.
+
+CONFIGURATION EVIDENCE
+The current manifest specifies GPU access and CPU and memory limits. The regenerated application configuration includes batch-related settings and model-loading options. We have logs for pod startup, driver identification, image digests, and application version strings, but not every value has been compared side by side. Do not assume that an identical model name means the complete runtime and scheduling configuration is identical.
+
+EXTERNAL EVIDENCE REQUIRED
+Compare the current vLLM and relevant dependency versions with recent official release notes, known-issue records, and compatibility documentation. Identify whether a documented regression plausibly matches the actual version and symptoms. Separate verified source evidence from a community hypothesis. Use current references, because our saved incident notes were written before the image change and may not include newly documented issues.
+
+FINAL REQUEST
+Determine whether the slowdown is more likely explained by deployment configuration, measurement differences, resource contention, or a known software regression. Provide an evidence table, ranked hypotheses, and the smallest follow-up measurements that could discriminate between them. Explain what remains unknown rather than claiming causation from one latency average. Compare GPU, host driver, bundled runtime, container image, vLLM configuration, and recent release notes. Do not perform any cluster changes, package upgrades, rollout, deletion, or traffic migration.

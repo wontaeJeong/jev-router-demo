@@ -1,0 +1,20 @@
+WRITING REQUEST
+Draft a customer support reply using the supplied correspondence and account notes. The reply should acknowledge the inconvenience, explain the next step, and stay within the service terms provided here. This is a draft for a human support representative to review. Do not send an email, access a customer account, issue a refund, change a contract, or make a promise that is unsupported by the supplied records.
+
+CUSTOMER MESSAGE
+The customer says a scheduled report arrived later than expected on two mornings last week. They were able to download the reports after signing in, but their team normally relies on the email notification to start a daily review. They ask whether the service was unavailable, whether their reports were lost, and whether they qualify for a credit. They also ask if changing the notification address would prevent the problem.
+
+SUPPORT HISTORY
+The first support agent confirmed that both reports exist in the account. The internal notification record shows delayed email delivery, not failure of report generation. The customer was previously told that the team would review the delivery path. No investigation conclusion or service-credit approval has been recorded. A note from a colleague suggests the receiving mailbox may have applied a filter, but that is a hypothesis rather than a verified cause.
+
+SUPPLIED SERVICE TERMS
+Report generation and notification delivery are separate parts of the workflow. The contract excerpt says that service credits are reviewed when a covered availability incident has been confirmed. It does not promise an automatic credit for every delayed notification. Account changes must be requested by an authorized contact. This excerpt is the source for this draft; do not search for a different public contract or assume that another customer's agreement applies.
+
+COMMUNICATION REQUIREMENTS
+The tone should be calm, direct, and empathetic. Acknowledge that even when data is available, a delayed notification can disrupt a team's routine. Explain what is confirmed and what remains under review without blaming the customer's mailbox. Ask for the approximate delivery times and an example message identifier if those details would help the support representative continue the investigation. Avoid disclosing speculative internal commentary as fact.
+
+BOUNDARIES
+The message should not say that the reports were lost, that there was a confirmed outage, or that a credit has been approved. It should not promise that changing an address will fix an unverified cause. The representative can offer to help an authorized contact review the notification settings, but the draft itself must not perform that change. Do not quote fictional case numbers or invent a resolution deadline.
+
+FINAL REQUEST
+Write a concise customer reply based on these records, followed by a short private checklist of facts the support representative still needs to confirm. Keep the customer-facing text separate from that checklist. Use only the supplied information and ordinary writing judgment. This is a request for text preparation, not a request to contact the customer, alter account settings, process financial compensation, or investigate current external service conditions.

@@ -1,0 +1,17 @@
+INCIDENT CONTEXT
+Our FastAPI service occasionally returns HTTP 500 when several clients submit requests at almost the same time. This is a request to review symptoms and suggest where to inspect the existing code first. We are not asking for a production deployment, an infrastructure change, or a survey of current framework releases. The trace and implementation sketch below are supplied examples from our investigation, not a complete runnable application.
+
+OBSERVED BEHAVIOR
+In a sequential test, each client submits a job, receives an identifier, and polls until the worker writes a result. In a concurrent test involving approximately twenty clients, a few polls fail while most jobs finish normally. Retrying a failed poll sometimes returns the expected result. The service currently has one process with asynchronous request handlers and a background task. We have not reproduced the issue consistently enough to identify a particular job type.
+
+IMPLEMENTATION SKETCH
+A module-level dictionary named jobs stores entries containing a status string and a result field. The submit handler writes jobs[job_id] = {"status": "queued", "result": None}. A background routine later updates that entry, and a cleanup routine removes entries older than a retention limit. The polling handler first checks whether job_id is present, awaits a helper that records an access event, and then looks up jobs[job_id] again. Cleanup also iterates over the dictionary while deciding which entries to remove.
+
+SUPPLIED TRACE EXCERPT
+The failure log contains a KeyError from the second dictionary lookup. A separate log occasionally reports "dictionary changed size during iteration" inside cleanup. Our logs show submission, polling, and cleanup events, but they do not currently include an operation identifier for every update. The database is not involved in this particular path. We have not observed authentication failures or an upstream timeout during the examples being discussed.
+
+INVESTIGATION LIMITS
+The team can inspect source code and add focused tests in a later step. For now, explain which shared-state accesses, await boundaries, and cleanup operations are worth examining. Distinguish an observation from a possible cause: the two log messages suggest code paths to investigate, but they do not establish that every HTTP 500 has the same cause. Avoid assuming that asynchronous code executes every instruction as one indivisible operation.
+
+OUTPUT AND FINAL REQUEST
+Review these symptoms and suggest the first parts of the code to inspect for a possible concurrency problem. Give a short ordered checklist and one small test idea that could distinguish an unsafe check-then-use sequence from an unrelated error. Explain whether dictionary mutation during iteration deserves a separate investigation. Do not edit the service, restart workers, replace the storage layer, deploy a fix, or consult external release notes; use the supplied details and general programming knowledge only.

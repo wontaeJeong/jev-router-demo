@@ -15,7 +15,8 @@ from jev_router_demo.config import Config
 from jev_router_demo.comparison import selected_value
 from jev_router_demo.inspection import SECTIONS, export_result, render_section
 from jev_router_demo.labels import FIELDS, OUTPUT_KINDS, STATES, candidate_label
-from jev_router_demo.scenarios import SCENARIOS, Scenario
+from jev_router_demo.scenarios import FILTERS, SCENARIOS, Scenario, scenario_indices
+from jev_router_demo.scenario_picker import ScenarioPicker
 from jev_router_demo.session import DemoSession, safe_display
 from jev_router_demo.ui import cumulative_panel, number
 
@@ -150,7 +151,7 @@ class RouterDemoApp(App):
     CSS_PATH = "tui.tcss"
     TITLE = "JEV / 라우터 실험실"
     BINDINGS = [("r", "run_compare", "실행"), ("n", "next", "다음"), ("p", "previous", "이전"),
-                ("e", "edit", "수정"), ("c", "show_view('comparison')", "비교"),
+                ("e", "edit", "수정"), ("s", "choose_scenario", "목록·검색"), ("c", "show_view('comparison')", "비교"),
                 ("d", "show_view('decisions')", "선택"), ("x", "show_view('execution')", "실행 상세"),
                 ("o", "inspect", "HTTP"), ("q", "quit", "종료")]
 
@@ -162,6 +163,8 @@ class RouterDemoApp(App):
         self.session = DemoSession(config, self.client)
         self.index = 0
         self.scenario = SCENARIOS[0]
+        self.scenario_category = "recommended"
+        self.scenario_query = ""
         self.full = False
         self.section = "request"
         self.inspector_text = ""
@@ -171,7 +174,7 @@ class RouterDemoApp(App):
         backend_note = self.config.jev_api_mode.upper() + " 구조화 API"
         yield Static("라우팅 전용 시뮬레이션  ·  후속 작업 실행 없음  ·  Jev: " + backend_note, id="subtitle")
         with Horizontal(classes="toolbar"):
-            yield Select([(f"{i+1:02}  {item.label}", i) for i, item in enumerate(SCENARIOS)] + [("직접 입력 요청", -1)], value=0, allow_blank=False, id="scenario")
+            yield Select(self.scenario_options(), value=0, allow_blank=False, id="scenario")
             yield Button("실행  [r]", variant="primary", id="run")
             yield Button("수정  [e]", id="edit")
         with RequestPreview(id="request-preview-scroll"):
@@ -217,7 +220,7 @@ class RouterDemoApp(App):
             with TabPane("세션 측정값", id="metrics"):
                 with VerticalScroll():
                     yield Static(id="metrics-table")
-        yield Static("시나리오를 선택한 뒤 r을 누르세요. Enter 없이 바로 실행됩니다.", id="status")
+        yield Static(f"추천 데모 6개 · 목록·검색 [s]로 전체 {len(SCENARIOS)}개 탐색 · r 실행", id="status")
         yield Footer()
 
     def on_mount(self):
@@ -240,7 +243,7 @@ class RouterDemoApp(App):
 
     def refresh_request(self):
         text = Text()
-        text.append(self.scenario.label + "\n", style="bold")
+        text.append(self.scenario.label + f" · {len(self.scenario.request):,}자 · {FILTERS[self.scenario_category]}\n", style="bold")
         if self.scenario.summary:
             text.append("요청 요약 · ", style="bold cyan")
             text.append(self.scenario.summary)
@@ -308,7 +311,12 @@ class RouterDemoApp(App):
 
     def on_select_changed(self, event: Select.Changed):
         if event.select.id == "scenario" and not self.session.running:
-            if event.value != -1:
+            if event.value != event.select.value or event.value is Select.BLANK:
+                return
+            if event.value == -2:
+                event.select.value = -1 if self.scenario.label == "직접 입력" else self.index
+                self.action_choose_scenario()
+            elif event.value != -1:
                 if self.scenario is SCENARIOS[int(event.value)]:
                     return
                 self.index = int(event.value)
@@ -352,15 +360,41 @@ class RouterDemoApp(App):
             self.notify("먼저 요청을 실행해 주세요.", severity="warning")
 
     def action_next(self):
-        if not self.session.running and not isinstance(self.screen, RequestEditor):
-            self.query_one("#scenario", Select).value = (self.index + 1) % len(SCENARIOS)
+        self.move_scenario(1)
 
     def action_previous(self):
-        if not self.session.running and not isinstance(self.screen, RequestEditor):
-            self.query_one("#scenario", Select).value = (self.index - 1) % len(SCENARIOS)
+        self.move_scenario(-1)
+
+    def scenario_options(self):
+        indices = scenario_indices(self.scenario_category, self.scenario_query)
+        return [(f"{i+1:02}  {SCENARIOS[i].label}", i) for i in indices] + [("목록·검색  [s]", -2), ("직접 입력 요청", -1)]
+
+    def move_scenario(self, direction):
+        if not self.session.running and not isinstance(self.screen, (RequestEditor, ScenarioPicker)):
+            indices = scenario_indices(self.scenario_category, self.scenario_query)
+            if indices:
+                position = indices.index(self.index) if self.index in indices else -1 if direction == 1 else 0
+                self.query_one("#scenario", Select).value = indices[(position + direction) % len(indices)]
+
+    def action_choose_scenario(self):
+        if not self.session.running and not isinstance(self.screen, (RequestEditor, ScenarioPicker)):
+            self.push_screen(ScenarioPicker(self.index, self.scenario_category, self.scenario_query), self.apply_selection)
+
+    def apply_selection(self, selection):
+        if selection is None:
+            return
+        index, category, query = selection
+        if index == -1:
+            self.action_edit()
+            return
+        self.scenario_category, self.scenario_query = category, query
+        selector = self.query_one("#scenario", Select)
+        selector.set_options(self.scenario_options())
+        selector.value = index
+        self.refresh_request()
 
     def action_edit(self):
-        if self.session.running or isinstance(self.screen, RequestEditor):
+        if self.session.running or isinstance(self.screen, (RequestEditor, ScenarioPicker)):
             return
         self.push_screen(RequestEditor(self.scenario.request), self.apply_custom)
 
@@ -379,11 +413,11 @@ class RouterDemoApp(App):
         self.action_show_view("inspector")
 
     def action_show_view(self, view):
-        if not isinstance(self.screen, RequestEditor):
+        if not isinstance(self.screen, (RequestEditor, ScenarioPicker)):
             self.query_one("#views", TabbedContent).active = view
 
     def action_run_compare(self):
-        if self.session.running or isinstance(self.screen, RequestEditor):
+        if self.session.running or isinstance(self.screen, (RequestEditor, ScenarioPicker)):
             return
         # Disable synchronously, before the worker gets its first event-loop turn.
         self.set_busy(True)
