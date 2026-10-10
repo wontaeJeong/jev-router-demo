@@ -1,0 +1,20 @@
+PLANNING CONTEXT
+Design a release plan for a small internal reporting feature under the constraints below. We need a reasoned plan that reconciles dependencies, staffing, review gates, and fallback options. This is a planning request, not authorization to deploy software or update project-management records. Use the information provided here rather than researching market conditions or current product announcements.
+
+TARGET AND SCOPE
+The feature adds a downloadable report generated from records that the application already stores. The first release must support the existing internal user group and preserve the current report format. It does not include a public API, new billing behavior, new identity-provider integration, or a new storage service. A documentation page and an operational handover are required before the feature can be enabled for the full internal group.
+
+TEAM AVAILABILITY
+Engineer A can work three days per week and owns data access and result generation. Engineer B can work two days per week and owns the user interface and end-to-end checks. A reviewer is available only on Tuesdays and Thursdays. The support representative who reviews the guide is unavailable during the second week. The operations owner can review an enablement plan during the third week but cannot perform a live change in this planning exercise.
+
+DEPENDENCIES AND EFFORT ASSUMPTIONS
+Defining the report contract takes one engineering day plus review. Data access and generation take four days after the contract is agreed. The interface takes three days after the contract is stable enough to use a sample response. Integration checks take two joint sessions after both paths are ready. Documentation takes one day and needs support review. Operational handover needs evidence from integration checks and the final guide.
+
+DELIVERY CONSTRAINTS
+The target is the end of the fourth week. Existing maintenance work consumes one of Engineer A's available days in the second week and one of Engineer B's available days in the third week. The team must keep a fallback that leaves the current reporting process usable if the new interface is not ready. We cannot quietly remove tests or the handover to claim the date has been met. Any proposed scope reduction must preserve the report contract and the current format.
+
+QUESTIONS FOR THE PLAN
+Identify the critical path, opportunities for parallel work, and the review windows that could block progress. Show how a sample response can support interface work without turning an unreviewed contract into a hidden dependency. Explain what evidence would justify enabling the feature and what conditions would trigger the fallback. Distinguish estimated effort from calendar availability.
+
+FINAL REQUEST
+Produce a week-by-week plan, a dependency sketch, principal risks, and a realistic fallback. If the target is not feasible under the supplied availability, say which constraint must change and give an alternative rather than inventing extra staff. Do not deploy, modify tickets, send scheduling messages, change the application, or consult an external release calendar. The deliverable is an analysis and plan based on the provided facts.

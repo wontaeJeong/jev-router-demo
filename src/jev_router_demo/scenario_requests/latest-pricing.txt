@@ -1,0 +1,20 @@
+RESEARCH REQUEST
+We are preparing a current comparison of text-model API costs for a small internal assistant. Research the latest official API pricing for OpenAI GPT-4.1 mini and Anthropic Claude Haiku 4.5. If either product identifier is no longer available or its official pricing page uses a replacement name, report that fact rather than silently substituting another model. This is a research task, not authorization to open an account, purchase credits, or configure a paid service.
+
+SUPPLIED WORKLOAD ASSUMPTIONS
+For the purpose of the estimate, assume twenty million input tokens and four million output tokens per month. In the baseline case, all input tokens are ordinary uncached input. A second case can estimate repeated-prefix caching only if the supplier's current official pricing distinguishes the relevant cache write and cache read charges. Treat these usage quantities as planning assumptions, not measurements from our application.
+
+WHAT MUST BE CURRENT
+We have an old spreadsheet, but it is deliberately not included as pricing evidence because public rates and product availability can change. Use current official provider sources. Identify the currency, price unit, input rate, output rate, and any conditions required for a discounted rate. A search-result summary or a third-party blog should not be treated as the final authoritative price when an official source is available.
+
+COMPARISON BOUNDARIES
+Compare ordinary API usage on a consistent basis. Keep batch processing, cached input, free credits, subscription bundles, negotiated discounts, taxes, and minimum commitments separate rather than mixing them into one attractive headline number. If the two providers describe caching differently, explain the difference before estimating the second case. Do not assume that a plan advertised for a web chat product applies to API usage.
+
+OUTPUT EXPECTATIONS
+Return a compact comparison table and a calculation for the baseline monthly workload. Show the formula so another person can replace the volume assumptions. Include source URLs and the date of verification. Flag any rate or condition that could not be verified. We are interested in costs and billing interpretation for the named products; model quality, latency, benchmark rankings, and vendor selection are outside this task.
+
+BUSINESS CONTEXT
+The assistant mostly rewrites internal notes and answers short questions from documents supplied by users. No provider has been selected, and the team is still checking whether its budget can support the projected volume. The estimate should help a discussion, not become a purchase recommendation that pretends the workload assumptions are guaranteed. Keep uncertainties visible instead of converting missing data into a zero cost.
+
+FINAL REQUEST
+Look up the latest official API rates and availability for the two named products, calculate the baseline estimate, and explain applicable billing caveats. Do not rely only on remembered prices or on the supplied workload to infer a current rate. Do not subscribe, spend money, transmit company documents, create credentials, edit environment settings, or contact a sales representative.

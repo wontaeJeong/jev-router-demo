@@ -1,0 +1,17 @@
+ARCHITECTURE REVIEW CONTEXT
+Analyze the supplied repository architecture and propose an incremental refactoring plan that separates infrastructure integrations from core domain logic. The goal is a maintainable boundary, not a rewrite. Our public command-line interface and result schema must remain compatible throughout the transition. This request is planning only; do not make changes to source files, create commits, or execute a migration.
+
+CURRENT STRUCTURE
+The repository has cli.py for argument parsing, service.py for orchestration, integrations/cloud.py for a remote model API, integrations/local.py for a local model endpoint, storage/sql.py for persistence, and reporting.py for presentation. In practice, service.py imports the SQL implementation and reads provider-specific environment variables. Domain decision objects are also used as HTTP request payloads, so changing a provider contract can unexpectedly change what the reporting layer sees.
+
+DEPENDENCY CONSTRAINTS
+The CLI accepts a request file, an output format, and a provider name. Existing automation expects the same exit codes and output keys. Some callers instantiate the service directly rather than going through the CLI. Unit tests currently fake provider calls, while integration tests use a disposable database. We cannot require every caller to adopt dependency injection in one release, and we cannot change the schema just to simplify a new abstraction.
+
+TEAM AND DELIVERY CONTEXT
+Two engineers can work on the refactor, but one is also responsible for routine maintenance. They need small pull requests that can be reviewed independently. The repository has no plugin marketplace and supports only the existing remote and local integrations. Avoid inventing a general extension system unless the current call paths genuinely require one. A compatibility wrapper may be useful, but its lifetime and removal conditions should be explicit.
+
+QUESTIONS TO RESOLVE
+Identify which objects should represent domain intent rather than transport payloads. Explain where provider selection and environment parsing should happen, how the service can receive the dependencies it needs, and what contract the persistence layer should expose. Consider cancellation, provider failures, and resource cleanup so the new boundaries do not merely move imports while preserving hidden coupling. Distinguish a required boundary from a convenience helper.
+
+OUTPUT AND FINAL REQUEST
+Propose an ordered refactoring plan with a dependency sketch, three or four independently reviewable stages, compatibility measures, and tests that establish behavior at each boundary. Explain which steps can happen in parallel and which depend on earlier contracts. Preserve the CLI interface and public result schema, and show how existing direct callers can continue working during the transition. Use only the supplied structure and general design knowledge; do not research current library versions, modify the repository, install dependencies, or execute any infrastructure operation.

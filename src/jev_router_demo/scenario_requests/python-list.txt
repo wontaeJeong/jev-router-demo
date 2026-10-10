@@ -1,0 +1,15 @@
+CONTEXT
+I am preparing a small Python exercise for colleagues who write documentation and occasional automation scripts. They are not maintaining a service and do not need an architecture review. Our worksheet includes a long explanation because some readers confuse reversing the order of items with sorting by their values. The actual question at the end is deliberately small: create a reversed copy of an existing list without changing that original list.
+
+WORKSHEET NOTES
+The example list represents the order in which a support agent visited four screens: ["welcome", "account", "billing", "confirmation"]. A second part of the worksheet shows [12, 7, 19, 3] to demonstrate that reversing preserves the elements rather than comparing their numeric values. We already know the desired screen output is ["confirmation", "billing", "account", "welcome"]. No filtering, deduplication, or case conversion is requested.
+
+Another colleague has proposed calling list.reverse(), assigning its return value to a variable, and then printing both variables. That proposal is included only to explain the confusion; you do not need to execute the worksheet. The readers have learned that assignment can make two names refer to the same object, and they want to avoid accidentally changing the input that a later exercise still uses. The list itself contains ordinary strings, not nested mutable objects, so a discussion of deep copying is unnecessary.
+
+The worksheet will run in a local interpreter with ordinary Python syntax. It uses no third-party packages, files, network services, credentials, production resources, or repository-specific helpers. The exercise is not about generators, custom sequence classes, streaming input, performance benchmarking, or memory limits. Please do not turn the solution into a reusable library, add a command-line interface, or introduce a dependency merely because the surrounding explanation is long.
+
+EXPECTED EXPLANATION
+Show the original variable, the reversed-copy variable, and the two resulting values. Keep the example short enough to fit on one slide. Explain in one or two sentences whether slicing produces a new list and whether the original order is preserved. It is acceptable to mention that an in-place reverse has different behavior, but the requested answer should focus on the simplest idiomatic approach for a regular list.
+
+FINAL REQUEST
+Please show the simplest idiomatic Python way to reverse the example list without modifying the original object, and briefly explain whether slicing creates a new list or mutates the existing one. Use only this supplied context and general Python knowledge. Do not run code, modify files, browse for current releases, or answer any of the unrelated topics mentioned in the worksheet notes.

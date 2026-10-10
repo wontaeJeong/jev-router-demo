@@ -1,0 +1,16 @@
+TASK CONTEXT
+Please extract action items from the meeting notes supplied below. This is a document-processing request: the meeting already happened, the notes are the only source, and the requested output is a small table. We do not need a project strategy, a current product search, calendar changes, or messages sent to the participants. An action should appear in the output only when a speaker explicitly accepted it.
+
+MEETING NOTES: INTERNAL HANDOVER
+Mina opened the discussion by asking whether the support guide would be ready for the next onboarding session. Several participants described previous sessions and the questions new colleagues often ask. Those comments provide context but do not assign work. Jun said he would update the section that explains how to request access and would finish it by Thursday. Mina accepted ownership of reviewing that updated section by Friday.
+
+Sora described two sample customer questions: one about finding an invoice and another about updating a contact address. She agreed to add those examples to the guide, but no deadline was agreed. The group discussed whether to include screenshots for every screen. Jun said screenshots might become outdated quickly; Sora suggested testing the idea with one page. Nobody accepted an action to produce the screenshots during this meeting.
+
+Mina said the next session would use the existing training room. The team talked about possible dates, but the date was not confirmed. Dae volunteered to send the final room and time information after Mina confirms the schedule. The notes do not state when that confirmation will happen. An earlier draft of the agenda had assigned a room-booking task to Jun, but Mina explicitly said that old assignment should be ignored because the room is already reserved.
+
+Jun reported that the troubleshooting appendix currently contains two broken internal links. He accepted an action to replace those links by Wednesday. During the same discussion, Mina asked whether the appendix should be reorganized. Jun said he could think about alternatives in the future, but he did not commit to a redesign or a delivery date. The group left the structure unchanged for this session.
+
+Sora asked if the guide should be translated before the onboarding session. Mina answered that translation was outside this meeting's scope. Dae noted that he had already circulated the previous attendance list; this was a completed activity, not a new action. The participants ended the meeting after agreeing that the current guide would remain the reference document while the explicitly assigned edits were prepared.
+
+OUTPUT AND FINAL REQUEST
+Return a table with exactly three columns: owner, action, and deadline. Include only the explicit accepted actions in these notes, preserve an unspecified deadline as "not specified", and do not infer dates from the order of discussion. Exclude completed activities, rejected proposals, old superseded assignments, and ideas without an owner. Do not send messages, update tickets, book rooms, look up information, or add your own recommendations. The notes are long, but the task is only extracting clearly stated facts.

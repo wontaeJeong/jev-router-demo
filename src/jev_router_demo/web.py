@@ -12,7 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, ValidationError, field_validator
 
 from jev_router_demo.config import Config
-from jev_router_demo.scenarios import SCENARIOS
+from jev_router_demo.scenarios import FILTERS, SCENARIOS
 from jev_router_demo.session import DemoSession
 
 
@@ -74,7 +74,9 @@ def create_app(config: Config, client: httpx.AsyncClient | None = None) -> FastA
                 await send({"type": "error", "message": str(exc)})
 
         try:
-            await send({"type": "init", "models": session.models, "scenarios": [asdict(item) for item in SCENARIOS], "snapshot": session.snapshot()})
+            await send({"type": "init", "models": session.models,
+                        "scenarios": [asdict(item) | {"request_chars": len(item.request)} for item in SCENARIOS],
+                        "scenario_filters": FILTERS, "snapshot": session.snapshot()})
             while True:
                 text = await socket.receive_text()
                 try:
